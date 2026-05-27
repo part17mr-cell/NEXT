@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { CreditCard, Upload, Check, Loader2, Building, FileText, Image as ImageIcon, Tag, X, MessageCircle, Copy, ChevronRight, Package } from 'lucide-react'
+import { CreditCard, Upload, Check, Loader2, Building, FileText, Image as ImageIcon, Tag, X, MessageCircle, Copy, ChevronRight, Package, LogIn, UserPlus } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -197,6 +197,37 @@ function CheckoutContent() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
+    )
+  }
+
+  // ต้อง login ก่อนชำระเงิน
+  if (!currentMember) {
+    return (
+      <section className="py-20 px-4">
+        <div className="max-w-sm mx-auto text-center space-y-6">
+          <div className="w-20 h-20 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
+            <LogIn className="w-9 h-9 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black mb-2">กรุณาเข้าสู่ระบบ</h2>
+            <p className="text-muted-foreground text-sm">ต้องเข้าสู่ระบบก่อนทำการชำระเงิน เพื่อให้แอดมินส่งสินค้าได้ถูกต้อง</p>
+          </div>
+          <div className="grid gap-3">
+            <Link href="/login?next=/checkout">
+              <Button className="w-full gap-2 h-11 font-semibold">
+                <LogIn className="w-4 h-4" />
+                เข้าสู่ระบบ
+              </Button>
+            </Link>
+            <Link href="/register?next=/checkout">
+              <Button variant="outline" className="w-full gap-2 h-11 font-semibold">
+                <UserPlus className="w-4 h-4" />
+                สมัครสมาชิก
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
     )
   }
 

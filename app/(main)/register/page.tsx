@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { UserPlus, Shield, Loader2, Lock, Check, ArrowRight, Sparkles, Eye, EyeOff } from 'lucide-react'
@@ -11,8 +11,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next') || '/account'
   const { register, settings } = useStore()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -25,38 +27,38 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!form.username.trim()) {
       toast.error('กรุณากรอก Username')
       return
     }
-    
+
     if (form.username.trim().length < 3) {
       toast.error('Username ต้องมีอย่างน้อย 3 ตัวอักษร')
       return
     }
-    
+
     if (!form.password) {
       toast.error('กรุณากรอก Password')
       return
     }
-    
+
     if (form.password !== form.confirm_password) {
       toast.error('Password ไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง')
       return
     }
-    
+
     if (form.password.length < 6) {
       toast.error('Password ต้องมีอย่างน้อย 6 ตัวอักษร')
       return
     }
-    
+
     setLoading(true)
-    
+
     try {
       const success = await register(form.username, form.password)
       if (success) {
-        router.push('/account')
+        router.push(next)
       }
     } finally {
       setLoading(false)
@@ -72,17 +74,17 @@ export default function RegisterPage() {
   return (
     <section className="py-12 px-4">
       <div className="max-w-5xl mx-auto">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="grid md:grid-cols-2 gap-6 items-stretch"
         >
           {/* Left - Form */}
-          <motion.form 
+          <motion.form
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            onSubmit={handleSubmit} 
+            onSubmit={handleSubmit}
             className="p-8 rounded-2xl border border-border/50 bg-card/50 glass order-2 md:order-1"
           >
             <div className="flex items-center gap-3 mb-6">
@@ -94,7 +96,7 @@ export default function RegisterPage() {
                 <p className="text-sm text-muted-foreground">สร้างบัญชีใหม่ฟรี</p>
               </div>
             </div>
-            
+
             <div className="space-y-5 mb-6">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Username</Label>
@@ -164,7 +166,7 @@ export default function RegisterPage() {
                 )}
               </div>
             </div>
-            
+
             <Button type="submit" className="w-full gap-2 h-11 font-semibold shadow-lg shadow-primary/20 group" disabled={loading}>
               {loading ? (
                 <>
@@ -179,7 +181,7 @@ export default function RegisterPage() {
                 </>
               )}
             </Button>
-            
+
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border/50" />
@@ -188,30 +190,29 @@ export default function RegisterPage() {
                 <span className="bg-card/50 px-3 text-muted-foreground">หรือ</span>
               </div>
             </div>
-            
+
             <p className="text-sm text-muted-foreground text-center">
               มีบัญชีแล้ว?{' '}
-              <Link href="/login" className="text-primary hover:underline font-semibold">
+              <Link href={`/login?next=${encodeURIComponent(next)}`} className="text-primary hover:underline font-semibold">
                 เข้าสู่ระบบ
               </Link>
             </p>
           </motion.form>
-          
+
           {/* Right - Info */}
           <aside className="p-8 rounded-2xl border border-border/50 bg-card/30 glass card-shine order-1 md:order-2">
             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-6">
               <Shield className="w-3.5 h-3.5" />
               MEMBER
             </span>
-            
+
             <h1 className="text-3xl font-display font-bold tracking-tight mb-4">
               เข้าร่วม <span className="text-gradient">{settings.brand.storeName}</span>
             </h1>
             <p className="text-muted-foreground mb-8 leading-relaxed">
               สมัครสมาชิกด้วย Username และ Password เท่านั้น ไม่มีอีเมล ไม่มีข้อมูลเกินจำเป็น เราให้ความสำคัญกับความเป็นส่วนตัวของคุณ
             </p>
-            
-            {/* Benefits */}
+
             <div className="grid gap-4">
               {benefits.map((benefit, index) => (
                 <motion.div
@@ -235,5 +236,17 @@ export default function RegisterPage() {
         </motion.div>
       </div>
     </section>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
   )
 }
