@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
@@ -26,8 +26,8 @@ export function FloatingButtons() {
                   <ShoppingCart className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <div className="font-bold text-lg">เธ•เธฐเธเธฃเนเธฒเธชเธดเธเธเนเธฒ</div>
-                  <p className="text-sm text-muted-foreground font-normal">{cartCount} เธฃเธฒเธขเธเธฒเธฃ - {formatMoney(cartTotal)}</p>
+                  <div className="font-bold text-lg">ตะกร้าสินค้า</div>
+                  <p className="text-sm text-muted-foreground font-normal">{cartCount} รายการ - {formatMoney(cartTotal)}</p>
                 </div>
               </div>
             </SheetTitle>
@@ -40,11 +40,11 @@ export function FloatingButtons() {
                   <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-secondary/50 flex items-center justify-center">
                     <Package className="w-10 h-10 opacity-30" />
                   </div>
-                  <p className="font-semibold text-foreground">เธ•เธฐเธเธฃเนเธฒเธงเนเธฒเธเน€เธเธฅเนเธฒ</p>
-                  <p className="text-sm mt-1">เน€เธฅเธทเธญเธเธชเธดเธเธเนเธฒเธเธฒเธเธฃเนเธฒเธเธเนเธฒเธเธญเธเน€เธฃเธฒ</p>
+                  <p className="font-semibold text-foreground">ตะกร้าว่างเปล่า</p>
+                  <p className="text-sm mt-1">เลือกสินค้าจากร้านค้าของเรา</p>
                   <Link href="/store">
                     <Button variant="outline" className="mt-4 gap-2">
-                      <Sparkles className="w-4 h-4" />เนเธเธฃเนเธฒเธเธเนเธฒ
+                      <Sparkles className="w-4 h-4" />ไปร้านค้า
                     </Button>
                   </Link>
                 </motion.div>
@@ -61,7 +61,7 @@ export function FloatingButtons() {
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">{item.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{item.category} - {formatMoney(item.price)} / เธเธดเนเธ</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{item.category} - {formatMoney(item.price)} / ชิ้น</p>
                       <div className="flex items-center gap-3 mt-3">
                         <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" onClick={() => updateCartItem(item.id, item.qty - 1)}>
                           <Minus className="w-3 h-3" />
@@ -87,7 +87,7 @@ export function FloatingButtons() {
           {cart.length > 0 && (
             <div className="border-t border-border/30 p-5 space-y-4 bg-card/80 backdrop-blur-sm">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground font-medium">เธฃเธงเธกเธ—เธฑเนเธเธซเธกเธ”</span>
+                <span className="text-muted-foreground font-medium">รวมทั้งหมด</span>
                 <motion.span key={cartTotal} initial={{ scale: 1.1 }} animate={{ scale: 1 }} className="text-2xl font-bold text-primary">
                   {formatMoney(cartTotal)}
                 </motion.span>
@@ -95,11 +95,11 @@ export function FloatingButtons() {
               <div className="grid gap-2">
                 <Link href="/checkout" onClick={() => setIsOpen(false)}>
                   <Button className="w-full gap-2 font-semibold h-12 text-base shadow-lg shadow-primary/30">
-                    <CreditCard className="w-5 h-5" />เธเธณเธฃเธฐเน€เธเธดเธ
+                    <CreditCard className="w-5 h-5" />ชำระเงิน
                   </Button>
                 </Link>
                 <Button variant="ghost" className="w-full text-muted-foreground hover:text-destructive" onClick={clearCart}>
-                  <Trash2 className="w-4 h-4 mr-2" />เธฅเนเธฒเธเธ•เธฐเธเธฃเนเธฒ
+                  <Trash2 className="w-4 h-4 mr-2" />ล้างตะกร้า
                 </Button>
               </div>
             </div>
@@ -107,7 +107,7 @@ export function FloatingButtons() {
         </SheetContent>
       </Sheet>
 
-      {/* FAB โ€” เนเธชเธ”เธเน€เธเธเธฒเธฐเน€เธกเธทเนเธญเธกเธตเธชเธดเธเธเนเธฒเนเธเธ•เธฐเธเธฃเนเธฒ เนเธฅเธฐ sheet เธเธดเธ”เธญเธขเธนเน */}
+      {/* FAB — แสดงเฉพาะเมื่อมีสินค้าในตะกร้า และ sheet ปิดอยู่ */}
       <AnimatePresence>
         {hasItems && !isOpen && (
           <motion.div
@@ -131,7 +131,7 @@ export function FloatingButtons() {
               )}
               <AnimatePresence mode="wait">
                 <motion.div key={cartCount} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} className="flex flex-col items-start">
-                  <span className="text-sm font-bold leading-tight">{cartCount} เธฃเธฒเธขเธเธฒเธฃ</span>
+                  <span className="text-sm font-bold leading-tight">{cartCount} รายการ</span>
                   <span className="text-xs opacity-90 leading-tight">{formatMoney(cartTotal)}</span>
                 </motion.div>
               </AnimatePresence>
@@ -188,10 +188,10 @@ function MiniCartNotification() {
           <div className="min-w-0 flex-1">
             <p className="text-xs text-emerald-500 font-semibold flex items-center gap-1">
               <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-2 h-2 rounded-full bg-emerald-500" />
-              เน€เธเธดเนเธกเนเธเธ•เธฐเธเธฃเนเธฒเนเธฅเนเธง
+              เพิ่มในตะกร้าแล้ว
             </p>
             <p className="text-sm font-semibold truncate mt-0.5">{lastItem?.name}</p>
-            <p className="text-xs text-muted-foreground">เธฃเธงเธก {cartCount} เธฃเธฒเธขเธเธฒเธฃ - {formatMoney(cartTotal)}</p>
+            <p className="text-xs text-muted-foreground">รวม {cartCount} รายการ - {formatMoney(cartTotal)}</p>
           </div>
           <button onClick={() => setShowNotification(false)} className="shrink-0 p-1.5 hover:bg-secondary rounded-lg transition-colors">
             <X className="w-4 h-4 text-muted-foreground" />
