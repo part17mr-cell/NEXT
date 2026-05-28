@@ -70,10 +70,12 @@ function DashboardTab() {
   const { orders, products, members, formatMoney, updateOrder } = useStore()
 
   const activeOrders = orders.filter(o => o.status !== 'cancelled')
-  const revenue = activeOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
+  // Revenue counts only confirmed (paid/delivered) orders, not unverified pending
+  const confirmedOrders = orders.filter(o => o.status === 'paid' || o.status === 'delivered' || o.status === 'processing')
+  const revenue = confirmedOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
   const pendingCount = orders.filter(o => o.status === 'pending').length
   const deliveredCount = orders.filter(o => o.status === 'delivered').length
-  const todayRevenue = activeOrders
+  const todayRevenue = confirmedOrders
     .filter(o => new Date(o.created_at).toDateString() === new Date().toDateString())
     .reduce((sum, o) => sum + (o.total_amount || 0), 0)
 

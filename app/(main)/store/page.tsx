@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, Suspense } from 'react'
+import { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -41,6 +41,11 @@ function StoreContent() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState(initialCategory)
   const [sort, setSort] = useState('sort')
+
+  // Sync category filter when URL ?category= param changes (e.g. clicking category links)
+  useEffect(() => {
+    setCategory(searchParams.get('category') || 'all')
+  }, [searchParams])
   const [gridSize, setGridSize] = useState<'small' | 'large'>('small')
 
   const filteredProducts = useMemo(() => {

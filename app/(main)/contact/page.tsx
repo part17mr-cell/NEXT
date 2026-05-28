@@ -69,7 +69,10 @@ export default function ContactPage() {
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold mb-3">
                 PHONE
               </span>
-              <h3 className="text-xl font-bold mb-3">{settings.contact.phone || '-'}</h3>
+              {settings.contact.phone && settings.contact.phone !== '-'
+                ? <h3 className="text-xl font-bold mb-3">{settings.contact.phone}</h3>
+                : <p className="text-lg font-medium text-muted-foreground mb-3">ไม่ระบุ</p>
+              }
               <p className="text-sm text-muted-foreground">ช่องทางสำรอง</p>
             </div>
           </div>

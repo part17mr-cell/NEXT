@@ -70,7 +70,7 @@ interface StoreContextType {
   getProductRating: (productId: string, stableHash: number, override?: number) => number
   getProductSoldCount: (productId: string, stableHash: number, override?: number) => number
   getProductViewCount: (productId: string, stableHash: number, override?: number) => number
-  incrementProductViews: (productId: string) => void
+  incrementProductViews: (productId: string, stableHash: number) => void
 
   // Modal state (for hiding cart FAB)
   modalOpen: boolean
@@ -407,6 +407,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       write(STORAGE_KEYS.orders, updated)
       return updated
     })
+    // Decrement stock for each item that has stock tracking
+    setProducts(prev => {
+      let changed = false
+      const updated = prev.map(p => {
+        const item = orderData.items.find(i => i.id === p.id)
+        if (item && p.stock_qty !== null && p.stock_qty !== undefined) {
+          changed = true
+          return { ...p, stock_qty: Math.max(0, p.stock_qty - item.qty) }
+        }
+        return p
+      })
+      if (changed) write(STORAGE_KEYS.products, updated)
+      return changed ? updated : prev
+    })
     scheduleServerSync()
     return order
   }, [scheduleServerSync])
@@ -438,14 +452,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     
     // Check password - compare with stored hash
-    // Also handle legacy case where password might be stored as plain text (for demo)
-    const passwordMatch = member.password_hash === hash || member.password_hash === password
+    const passwordMatch = member.password_hash === hash
     
     if (!passwordMatch) {
       toast.error('Password ไม่ถูกต้อง กรุณาลองใหม่')
       return false
     }
     
+    // Clear admin session when logging in as member
+    setIsAdmin(false)
+    sessionStorage.removeItem(STORAGE_KEYS.admin)
     setCurrentMember(member)
     sessionStorage.setItem(STORAGE_KEYS.member, member.id)
     localStorage.setItem(STORAGE_KEYS.member, member.id)
@@ -528,6 +544,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const passwordMatchesDefault = usernameMatchesDefault && password === defaultSettings.security.adminPassword
     
     if (passwordMatchesStored || passwordMatchesDefault) {
+      // Clear member session when switching to admin
+      setCurrentMember(null)
+      sessionStorage.removeItem(STORAGE_KEYS.member)
+      localStorage.removeItem(STORAGE_KEYS.member)
       setIsAdmin(true)
       sessionStorage.setItem(STORAGE_KEYS.admin, 'ok')
       toast.success('เข้าสู่ระบบแอดมินสำเร็จ')
@@ -582,7 +602,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const applyPromoCode = useCallback((code: string, orderTotal: number): { discount: number; promoCode: PromoCode } | null => {
     const promo = promoCodes.find(c => c.code.toUpperCase() === code.toUpperCase() && c.is_active)
     if (!promo) return null
-    if (promo.expires_at && new Date(promo.expires_at) < new Date()) return null
+    if (promo.expires_at) {
+      // If only a date (no time component), treat expiry as end of that day
+      const expiryStr = promo.expires_at.includes('T') ? promo.expires_at : promo.expires_at + 'T23:59:59'
+      if (new Date(expiryStr) < new Date()) return null
+    }
     if (promo.max_uses > 0 && promo.uses >= promo.max_uses) return null
     if (promo.min_amount > 0 && orderTotal < promo.min_amount) return null
     const discount = promo.type === 'percent'
@@ -647,10 +671,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return rawViews * 287 + 1000
   }, [viewCounts])
 
-  const incrementProductViews = useCallback((productId: string) => {
+  const incrementProductViews = useCallback((productId: string, stableHash: number) => {
     setViewCounts(prev => {
-      const rawViews = 3 + 287 + 1000
-      const current = prev[productId] ?? rawViews
+      // Use same formula as getProductViewCount for consistent initial value
+      const rawViews = 3 + (stableHash % 13)
+      const initial = rawViews * 287 + 1000
+      const current = prev[productId] ?? initial
       const updated = { ...prev, [productId]: current + 1 }
       write(STORAGE_KEYS.views, updated)
       return updated

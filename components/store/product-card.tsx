@@ -119,7 +119,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleOpenDetail = () => {
     setShowDetail(true)
     openModal()
-    incrementProductViews(product.id)
+    incrementProductViews(product.id, stableHash)
   }
   const handleCloseDetail = () => {
     setShowDetail(false)
@@ -226,14 +226,16 @@ export function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
           
-          {/* Quick buy button */}
-          <div className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-10">
-            <Link href={`/checkout?product=${encodeURIComponent(product.id)}`}>
-              <Button size="icon" className="h-9 w-9 rounded-xl shadow-lg bg-white text-foreground hover:bg-white/90">
-                <Zap className="w-4 h-4" />
-              </Button>
-            </Link>
-          </div>
+          {/* Quick buy button — hidden when out of stock */}
+          {!isOutOfStock && (
+            <div className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-10">
+              <Link href={`/checkout?product=${encodeURIComponent(product.id)}`}>
+                <Button size="icon" className="h-9 w-9 rounded-xl shadow-lg bg-white text-foreground hover:bg-white/90">
+                  <Zap className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          )}
 
           {/* Admin delete button — bottom-right, hover only */}
           {isAdmin && (
