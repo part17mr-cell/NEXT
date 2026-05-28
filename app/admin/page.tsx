@@ -67,7 +67,8 @@ import type { Product, Order, StoreSettings, PromoCode } from '@/lib/store-data'
 
 // Dashboard Tab
 function DashboardTab() {
-  const { orders, products, members, formatMoney, updateOrder } = useStore()
+  const { orders, products, members, formatMoney, updateOrder, refreshFromServer } = useStore()
+  const [refreshing, setRefreshing] = useState(false)
 
   const activeOrders = orders.filter(o => o.status !== 'cancelled')
   // Revenue counts only confirmed (paid/delivered) orders, not unverified pending
@@ -120,6 +121,24 @@ function DashboardTab() {
   return (
     <div className="space-y-6">
       {/* KPIs */}
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">อัปเดตทุก 15 วินาที</p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          disabled={refreshing}
+          onClick={async () => {
+            setRefreshing(true)
+            await refreshFromServer()
+            setRefreshing(false)
+            toast.success('โหลดข้อมูลล่าสุดแล้ว')
+          }}
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+          รีเฟรช
+        </Button>
+      </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'ออเดอร์ทั้งหมด', value: orders.length.toString(), color: 'text-foreground', bg: '' },
@@ -276,8 +295,9 @@ function SlipModal({ src, onClose }: { src: string; onClose: () => void }) {
 
 // Orders Tab with full management
 function OrdersTab() {
-  const { orders, updateOrder, formatMoney, getProductById } = useStore()
+  const { orders, updateOrder, formatMoney, getProductById, refreshFromServer } = useStore()
   const [filter, setFilter] = useState('all')
+  const [refreshing, setRefreshing] = useState(false)
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'highest'>('newest')
   const [deliveryLinks, setDeliveryLinks] = useState<Record<string, string>>({})
@@ -428,6 +448,20 @@ function OrdersTab() {
           </Select>
           <Button variant="outline" size="icon" onClick={exportCSV} title="Export CSV">
             <Download className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            title="โหลดออเดอร์ใหม่จาก Server"
+            disabled={refreshing}
+            onClick={async () => {
+              setRefreshing(true)
+              await refreshFromServer()
+              setRefreshing(false)
+              toast.success('โหลดออเดอร์ล่าสุดแล้ว')
+            }}
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </div>
@@ -1527,6 +1561,7 @@ function SettingsTab() {
     { id: 'pages', label: 'หน้าอื่นๆ', icon: FileText },
     { id: 'stats', label: 'สถิติหน้าแรก', icon: TrendingUp },
     { id: 'visibility', label: 'การแสดงผล', icon: Eye },
+    { id: 'slipApi', label: 'API สลิป', icon: Key },
     { id: 'security', label: 'ความปลอดภัย', icon: Shield },
   ]
 
@@ -2033,6 +2068,91 @@ function SettingsTab() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Slip API Settings */}
+        {activeSection === 'slipApi' && (
+          <div className="p-6 rounded-2xl border border-border bg-card/50 space-y-6">
+            <h3 className="font-bold text-lg flex items-center gap-2">
+              <Key className="w-5 h-5 text-primary" />
+              API ตรวจสลิปอัตโนมัติ
+            </h3>
+            <p className="text-sm text-muted-foreground -mt-4">
+              กรอก API Key อย่างน้อย 1 ตัว — ระบบจะลอง Tabscanner ก่อน แล้ว fallback ไป EasySlip
+            </p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">PRIMARY</span>
+                  Tabscanner API Key
+                </Label>
+                <Input
+                  type="password"
+                  placeholder="ยJg2o62x... (จาก tabscanner.com)"
+                  value={form.slipApi?.tabscannerKey || ''}
+                  onChange={e => setForm(prev => ({
+                    ...prev,
+                    slipApi: { ...prev.slipApi, tabscannerKey: e.target.value }
+                  }))}
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">สมัครที่ <a href="https://tabscanner.com" target="_blank" rel="noopener noreferrer" className="underline text-primary">tabscanner.com</a></p>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">FALLBACK</span>
+                  EasySlip API Key
+                </Label>
+                <Input
+                  type="password"
+                  placeholder="Bearer token จาก easyslip.com"
+                  value={form.slipApi?.easyslipKey || ''}
+                  onChange={e => setForm(prev => ({
+                    ...prev,
+                    slipApi: { ...prev.slipApi, easyslipKey: e.target.value }
+                  }))}
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">สมัครที่ <a href="https://easyslip.com" target="_blank" rel="noopener noreferrer" className="underline text-primary">easyslip.com</a></p>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-border space-y-3">
+              <p className="text-sm font-bold">ตัวเลือกการตรวจสอบ</p>
+              <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-background/50">
+                <div>
+                  <p className="text-sm font-medium">ตรวจสลิปอัตโนมัติเมื่อลูกค้าสั่งซื้อ</p>
+                  <p className="text-xs text-muted-foreground">เรียก API ทันทีที่ลูกค้ากดยืนยันออเดอร์</p>
+                </div>
+                <Switch
+                  checked={form.slipApi?.autoVerify ?? false}
+                  onCheckedChange={v => setForm(prev => ({
+                    ...prev,
+                    slipApi: { ...prev.slipApi, autoVerify: v }
+                  }))}
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl border border-red-500/20 bg-red-500/5">
+                <div>
+                  <p className="text-sm font-medium text-red-400">ยกเลิกออเดอร์อัตโนมัติหากสลิปไม่ผ่าน</p>
+                  <p className="text-xs text-muted-foreground">เปิดเมื่อต้องการให้ระบบ Reject สลิปปลอมทันที</p>
+                </div>
+                <Switch
+                  checked={form.slipApi?.autoReject ?? false}
+                  onCheckedChange={v => setForm(prev => ({
+                    ...prev,
+                    slipApi: { ...prev.slipApi, autoReject: v }
+                  }))}
+                />
+              </div>
+            </div>
+            <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
+              <p className="text-xs text-amber-400 font-bold mb-1">🔒 ความปลอดภัย</p>
+              <p className="text-xs text-muted-foreground">
+                API Key ถูกเก็บใน Redis (เข้ารหัสด้วย Upstash) ไม่ใช่ใน Source Code — แต่ถ้าต้องการ Security สูงสุด
+                ให้ใส่ Key ใน Vercel Environment Variables แทน (ระบบจะใช้ Env Vars ก่อนเสมอ)
+              </p>
             </div>
           </div>
         )}

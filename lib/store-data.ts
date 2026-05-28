@@ -159,6 +159,12 @@ export interface StoreSettings {
     baseMembers: number
     baseOrders: number
   }
+  slipApi: {
+    tabscannerKey: string
+    easyslipKey: string
+    autoVerify: boolean
+    autoReject: boolean
+  }
   security: {
     adminUsername: string
     adminPassword: string
@@ -245,6 +251,12 @@ export const defaultSettings: StoreSettings = {
   heroStats: {
     baseMembers: 0,
     baseOrders: 0,
+  },
+  slipApi: {
+    tabscannerKey: '',
+    easyslipKey: '',
+    autoVerify: false,
+    autoReject: false,
   },
   security: {
     adminUsername: 'admin',

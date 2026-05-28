@@ -1,13 +1,33 @@
 import { NextResponse } from 'next/server'
+import { Redis } from '@upstash/redis'
 
 // ── Tabscanner ────────────────────────────────────────────────
 const TABSCANNER_PROCESS = 'https://api.tabscanner.com/api/2/process'
 const TABSCANNER_RESULT  = 'https://api.tabscanner.com/api/result'
-const TABSCANNER_KEY     = process.env.TABSCANNER_API_KEY || ''
 
 // ── EasySlip ──────────────────────────────────────────────────
 const EASYSLIP_API = 'https://developer.easyslip.com/api/v1/verify'
-const EASYSLIP_KEY = process.env.EASYSLIP_API_KEY || ''
+
+// ── Resolve API keys: env vars first, then Redis settings as fallback ─────
+async function resolveKeys(): Promise<{ tabscannerKey: string; easyslipKey: string }> {
+  const envTabscanner = process.env.TABSCANNER_API_KEY || ''
+  const envEasyslip   = process.env.EASYSLIP_API_KEY   || ''
+  if (envTabscanner || envEasyslip) {
+    return { tabscannerKey: envTabscanner, easyslipKey: envEasyslip }
+  }
+  // Fallback: read from Redis store settings
+  try {
+    const redis = Redis.fromEnv()
+    const data = await redis.get('nextthon:store') as Record<string, unknown> | null
+    const slipApi = (data?.settings as Record<string, unknown> | undefined)?.slipApi as Record<string, string> | undefined
+    return {
+      tabscannerKey: slipApi?.tabscannerKey || '',
+      easyslipKey:   slipApi?.easyslipKey   || '',
+    }
+  } catch {
+    return { tabscannerKey: '', easyslipKey: '' }
+  }
+}
 
 // Shared result type
 interface SlipResult {
@@ -35,11 +55,11 @@ function base64ToBlob(slip_data: string): { blob: Blob; ext: string } {
   return { blob: new Blob([buffer], { type: mime }), ext }
 }
 
-async function tabscannerPoll(token: string, attempts = 8, delay = 1200): Promise<Record<string, unknown> | null> {
+async function tabscannerPoll(token: string, apiKey: string, attempts = 8, delay = 1200): Promise<Record<string, unknown> | null> {
   for (let i = 0; i < attempts; i++) {
     await new Promise(r => setTimeout(r, delay))
     const res = await fetch(`${TABSCANNER_RESULT}/${token}`, {
-      headers: { Authorization: TABSCANNER_KEY },
+      headers: { Authorization: apiKey },
       cache: 'no-store',
     })
     if (!res.ok) return null
@@ -50,14 +70,14 @@ async function tabscannerPoll(token: string, attempts = 8, delay = 1200): Promis
 }
 
 // ── Provider: Tabscanner ──────────────────────────────────────
-async function verifyWithTabscanner(slip_data: string): Promise<SlipResult> {
+async function verifyWithTabscanner(slip_data: string, apiKey: string): Promise<SlipResult> {
   const { blob, ext } = base64ToBlob(slip_data)
   const form = new FormData()
   form.append('file', blob, `slip.${ext}`)
 
   const submitRes = await fetch(TABSCANNER_PROCESS, {
     method: 'POST',
-    headers: { Authorization: TABSCANNER_KEY },
+    headers: { Authorization: apiKey },
     body: form,
   })
 
@@ -70,7 +90,7 @@ async function verifyWithTabscanner(slip_data: string): Promise<SlipResult> {
     throw new Error('Tabscanner: ไม่ได้รับ token')
   }
 
-  const result = await tabscannerPoll(submitData.token as string)
+  const result = await tabscannerPoll(submitData.token as string, apiKey)
   if (!result || result.status !== 'success') {
     throw new Error('Tabscanner: อ่านสลิปไม่สำเร็จ หรือหมดเวลา')
   }
@@ -92,14 +112,14 @@ async function verifyWithTabscanner(slip_data: string): Promise<SlipResult> {
 }
 
 // ── Provider: EasySlip ────────────────────────────────────────
-async function verifyWithEasySlip(slip_data: string): Promise<SlipResult> {
+async function verifyWithEasySlip(slip_data: string, apiKey: string): Promise<SlipResult> {
   const { blob, ext } = base64ToBlob(slip_data)
   const form = new FormData()
   form.append('file', blob, `slip.${ext}`)
 
   const res = await fetch(EASYSLIP_API, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${EASYSLIP_KEY}` },
+    headers: { Authorization: `Bearer ${apiKey}` },
     body: form,
   })
 
@@ -142,12 +162,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'ไม่มีข้อมูลสลิป' }, { status: 400 })
     }
 
-    const hasTabscanner = !!TABSCANNER_KEY
-    const hasEasySlip   = !!EASYSLIP_KEY
+    const { tabscannerKey, easyslipKey } = await resolveKeys()
+    const hasTabscanner = !!tabscannerKey
+    const hasEasySlip   = !!easyslipKey
 
     if (!hasTabscanner && !hasEasySlip) {
       return NextResponse.json(
-        { ok: false, error: 'ยังไม่ได้ตั้งค่า API Key ในระบบ (TABSCANNER_API_KEY หรือ EASYSLIP_API_KEY)' },
+        { ok: false, error: 'ยังไม่ได้ตั้งค่า API Key (ตั้งใน Admin → ตั้งค่า → API สลิป)' },
         { status: 503 }
       )
     }
@@ -157,7 +178,7 @@ export async function POST(request: Request) {
     // ① Try Tabscanner first (if key available)
     if (hasTabscanner) {
       try {
-        const result = await verifyWithTabscanner(slip_data)
+        const result = await verifyWithTabscanner(slip_data, tabscannerKey)
         return NextResponse.json(result)
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
@@ -169,7 +190,7 @@ export async function POST(request: Request) {
     // ② Fallback to EasySlip
     if (hasEasySlip) {
       try {
-        const result = await verifyWithEasySlip(slip_data)
+        const result = await verifyWithEasySlip(slip_data, easyslipKey)
         return NextResponse.json(result)
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)

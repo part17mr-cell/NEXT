@@ -77,6 +77,9 @@ interface StoreContextType {
   openModal: () => void
   closeModal: () => void
 
+  // Manual refresh from server
+  refreshFromServer: () => Promise<void>
+
   // Helpers
   formatMoney: (amount: number) => string
   isLoaded: boolean
@@ -301,6 +304,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setIsLoaded(true)
     }).catch(() => setIsLoaded(true))
   }, [])
+
+  // Poll server every 15s when admin is logged in so new customer orders appear live
+  useEffect(() => {
+    if (!isAdmin || !isLoaded) return
+    const poll = async () => {
+      const sv = await fetchFromServer()
+      if (sv.orders)  setOrders(sv.orders)
+      if (sv.members) setMembers(sv.members)
+    }
+    const timer = setInterval(poll, 15000)
+    return () => clearInterval(timer)
+  }, [isAdmin, isLoaded])
 
   // Settings
   const updateSettings = useCallback((newSettings: Partial<StoreSettings>) => {
@@ -684,6 +699,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     scheduleServerSync()
   }, [scheduleServerSync])
 
+  // Manual refresh from server (used by admin refresh button)
+  const refreshFromServer = useCallback(async () => {
+    const sv = await fetchFromServer()
+    if (sv.settings)    setSettings(deepMerge(defaultSettings, sv.settings))
+    if (sv.products?.length) setProducts(sv.products)
+    if (sv.orders)      setOrders(sv.orders)
+    if (sv.members)     setMembers(sv.members)
+    if (sv.promoCodes)  setPromoCodes(sv.promoCodes)
+    if (sv.reviews)     setReviews(sv.reviews)
+    if (sv.viewCounts)  setViewCounts(sv.viewCounts)
+  }, [])
+
   // Modal open/close (for hiding cart FAB)
   const openModal = useCallback(() => setModalCount(c => c + 1), [])
   const closeModal = useCallback(() => setModalCount(c => Math.max(0, c - 1)), [])
@@ -742,6 +769,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       modalOpen: modalCount > 0,
       openModal,
       closeModal,
+      refreshFromServer,
       formatMoney,
       isLoaded,
     }}>

@@ -22,6 +22,7 @@ function CheckoutContent() {
     getProductById,
     currentMember,
     createOrder,
+    updateOrder,
     clearCart,
     formatMoney,
     isLoaded,
@@ -31,6 +32,7 @@ function CheckoutContent() {
   
   const [items, setItems] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(false)
+  const [verifyStatus, setVerifyStatus] = useState<'idle' | 'verifying' | 'passed' | 'failed'>('idle')
   const [success, setSuccess] = useState<string | null>(null)
   const [slipPreview, setSlipPreview] = useState<string | null>(null)
   const [promoInput, setPromoInput] = useState('')
@@ -139,6 +141,36 @@ function CheckoutContent() {
       // Increment promo code usage
       if (appliedPromo) {
         updatePromoCode(appliedPromo.promoCode.id, { uses: appliedPromo.promoCode.uses + 1 })
+      }
+
+      // Auto-verify slip if API keys are configured in settings
+      const hasTabscanner = !!settings.slipApi?.tabscannerKey
+      const hasEasyslip   = !!settings.slipApi?.easyslipKey
+      if (hasTabscanner || hasEasyslip) {
+        setVerifyStatus('verifying')
+        try {
+          const verifyRes = await fetch('/api/verify-slip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slip_data: slipData }),
+          })
+          const verifyData = await verifyRes.json() as { ok: boolean; verified?: boolean; error?: string }
+          if (verifyData.ok && verifyData.verified) {
+            updateOrder(order.id, { status: 'paid' })
+            setVerifyStatus('passed')
+            toast.success('สลิปผ่านการตรวจสอบอัตโนมัติ!')
+          } else {
+            setVerifyStatus('failed')
+            if (settings.slipApi?.autoReject) {
+              updateOrder(order.id, { status: 'cancelled' })
+              toast.error('ตรวจสลิปไม่ผ่าน — ออเดอร์ถูกยกเลิกอัตโนมัติ กรุณาติดต่อแอดมิน')
+              setLoading(false)
+              return
+            }
+          }
+        } catch {
+          setVerifyStatus('idle') // verify failed silently — order still created
+        }
       }
 
       // Send Discord webhook notification (fire-and-forget)
@@ -489,7 +521,12 @@ function CheckoutContent() {
               </div>
 
               <Button type="submit" className="w-full gap-2" size="lg" disabled={loading}>
-                {loading ? (
+                {loading && verifyStatus === 'verifying' ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    กำลังตรวจสลิปอัตโนมัติ...
+                  </>
+                ) : loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     กำลังบันทึก...
