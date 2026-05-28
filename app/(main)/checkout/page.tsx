@@ -4,11 +4,11 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { CreditCard, Upload, Check, Loader2, Building, FileText, Image as ImageIcon, Tag, X, MessageCircle, Copy, ChevronRight, Package, LogIn, UserPlus } from 'lucide-react'
+
 import { useStore } from '@/lib/store-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
 import type { CartItem, PromoCode } from '@/lib/store-data'
 
@@ -37,7 +37,6 @@ function CheckoutContent() {
   const [appliedPromo, setAppliedPromo] = useState<{ discount: number; promoCode: PromoCode } | null>(null)
 
   const [form, setForm] = useState({
-    terms: false,
     slip: null as File | null,
   })
 
@@ -104,11 +103,6 @@ function CheckoutContent() {
 
     if (!form.slip) {
       toast.error('กรุณาแนบสลิป')
-      return
-    }
-
-    if (!form.terms) {
-      toast.error('กรุณายอมรับเงื่อนไข')
       return
     }
     
@@ -492,17 +486,6 @@ function CheckoutContent() {
                     เปลี่ยนรูป
                   </Button>
                 )}
-              </div>
-
-              <div className="flex items-center gap-3 p-4 rounded-xl border border-border bg-background/50 mb-6 shrink-0">
-                <Checkbox
-                  id="terms"
-                  checked={form.terms}
-                  onCheckedChange={checked => setForm(prev => ({ ...prev, terms: !!checked }))}
-                />
-                <Label htmlFor="terms" className="text-sm cursor-pointer">
-                  ยืนยันว่าข้อมูลถูกต้องและยอมรับเงื่อนไขร้าน
-                </Label>
               </div>
 
               <Button type="submit" className="w-full gap-2" size="lg" disabled={loading}>
