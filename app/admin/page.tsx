@@ -301,6 +301,12 @@ function OrdersTab() {
     toast.success('ยืนยันสลิปและส่งสินค้าแล้ว')
   }
 
+  const handleRejectOrder = (orderId: string) => {
+    if (!confirm('ยืนยันการปฏิเสธออเดอร์นี้?')) return
+    updateOrder(orderId, { status: 'cancelled' })
+    toast.success('ปฏิเสธออเดอร์แล้ว')
+  }
+
   const handleSaveNote = (orderId: string) => {
     const note = editNotes[orderId]
     if (note === undefined) return
@@ -501,13 +507,23 @@ function OrdersTab() {
                         <p className="text-xs text-yellow-500">ยังไม่ได้เซ็ตลิงก์สินค้า — กรอกด้านล่าง</p>
                       )}
                     </div>
-                    <Button
-                      onClick={() => handleConfirmDelivery(order.id)}
-                      className="gap-2 bg-emerald-600 hover:bg-emerald-700 shrink-0"
-                    >
-                      <Check className="w-4 h-4" />
-                      ยืนยันสลิป
-                    </Button>
+                    <div className="flex gap-2 shrink-0">
+                      <Button
+                        onClick={() => handleRejectOrder(order.id)}
+                        variant="outline"
+                        className="gap-2 border-destructive/50 text-destructive hover:bg-destructive/10 shrink-0"
+                      >
+                        <X className="w-4 h-4" />
+                        ปฏิเสธ
+                      </Button>
+                      <Button
+                        onClick={() => handleConfirmDelivery(order.id)}
+                        className="gap-2 bg-emerald-600 hover:bg-emerald-700 shrink-0"
+                      >
+                        <Check className="w-4 h-4" />
+                        ยืนยันสลิป
+                      </Button>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Input
@@ -799,6 +815,7 @@ function ProductForm({
           <Label className="flex items-center gap-1.5">
             <ImageIcon className="w-4 h-4 text-muted-foreground" />
             รูปภาพปกสินค้า
+            <span className="text-xs text-muted-foreground font-normal">— แนะนำ 800×800px (JPG/PNG ไม่เกิน 10MB)</span>
           </Label>
           <ImageInput
             value={form.image_url}
@@ -1443,7 +1460,7 @@ function SettingsTab() {
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label>Logo</Label>
+                <Label>Logo <span className="text-xs text-muted-foreground font-normal">— แนะนำ 200×60px หรือ 400×120px (PNG/SVG พื้นหลังโปร่งใส)</span></Label>
                 <ImageInput
                   value={form.brand.logoUrl || ''}
                   onChange={v => setForm(prev => ({ ...prev, brand: { ...prev.brand, logoUrl: v } }))}
@@ -1465,7 +1482,7 @@ function SettingsTab() {
             <p className="text-sm text-muted-foreground mb-6">วาง URL หรือกด <strong>อัปโหลด</strong> เพื่อเลือกไฟล์จากเครื่อง</p>
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Favicon</Label>
+                <Label>Favicon <span className="text-xs text-muted-foreground font-normal">— 32×32px หรือ 64×64px (ICO/PNG)</span></Label>
                 <ImageInput
                   value={form.brand.faviconUrl || ''}
                   onChange={v => setForm(prev => ({ ...prev, brand: { ...prev.brand, faviconUrl: v } }))}
@@ -1474,7 +1491,7 @@ function SettingsTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>LINE Icon</Label>
+                <Label>LINE Icon <span className="text-xs text-muted-foreground font-normal">— 64×64px (PNG/JPG)</span></Label>
                 <ImageInput
                   value={form.icons?.lineIconUrl || ''}
                   onChange={v => setForm(prev => ({ ...prev, icons: { ...prev.icons, lineIconUrl: v } }))}
@@ -1483,7 +1500,7 @@ function SettingsTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Cart Icon</Label>
+                <Label>Cart Icon <span className="text-xs text-muted-foreground font-normal">— 64×64px (PNG โปร่งใส)</span></Label>
                 <ImageInput
                   value={form.icons?.cartIconUrl || ''}
                   onChange={v => setForm(prev => ({ ...prev, icons: { ...prev.icons, cartIconUrl: v } }))}
@@ -1492,7 +1509,7 @@ function SettingsTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Hero Background</Label>
+                <Label>Hero Background <span className="text-xs text-muted-foreground font-normal">— 1920×1080px หรือ 1280×720px (JPG/PNG)</span></Label>
                 <ImageInput
                   value={form.icons?.heroIconUrl || ''}
                   onChange={v => setForm(prev => ({ ...prev, icons: { ...prev.icons, heroIconUrl: v } }))}
@@ -1710,7 +1727,7 @@ function SettingsTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>QR Code พร้อมเพย์ / PromptPay</Label>
+                <Label>QR Code พร้อมเพย์ / PromptPay <span className="text-xs text-muted-foreground font-normal">— 400×400px (JPG/PNG)</span></Label>
                 <ImageInput
                   value={form.payment.qrImageUrl || ''}
                   onChange={v => setForm(prev => ({ ...prev, payment: { ...prev.payment, qrImageUrl: v } }))}
