@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="160" y2="160" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="arrow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#c4b5fd" stop-opacity="0.9"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="160" height="160" rx="32" fill="url(#bg)"/>
+
+  <!-- Subtle inner glow -->
+  <rect width="160" height="160" rx="32" fill="white" opacity="0.04"/>
+
+  <!-- N letter - bold geometric -->
+  <path d="M30 118 L30 42 L52 42 L94 90 L94 42 L116 42 L116 118 L94 118 L52 70 L52 118 Z"
+        fill="url(#arrow)" filter="url(#glow)"/>
+
+  <!-- Arrow accent - top right -->
+  <circle cx="128" cy="38" r="14" fill="white" opacity="0.15"/>
+  <path d="M122 44 L134 32 M128 32 L134 32 L134 38"
+        stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+
+  <!-- Dot accent bottom -->
+  <circle cx="128" cy="122" r="8" fill="white" opacity="0.25"/>
+  <circle cx="128" cy="122" r="4" fill="white" opacity="0.6"/>
+</svg>

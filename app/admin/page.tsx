@@ -257,6 +257,23 @@ function DashboardTab() {
   )
 }
 
+// Slip lightbox modal
+function SlipModal({ src, onClose }: { src: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="relative max-w-lg w-full" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute -top-10 right-0 text-white/80 hover:text-white flex items-center gap-1 text-sm">
+          <X className="w-5 h-5" /> ปิด
+        </button>
+        <img src={src} alt="Slip" className="w-full rounded-2xl border border-white/20 shadow-2xl object-contain max-h-[80vh]" />
+        <a href={src} download="slip.jpg" className="mt-3 flex items-center justify-center gap-2 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm transition-colors">
+          <Download className="w-4 h-4" /> บันทึกสลิป
+        </a>
+      </div>
+    </div>
+  )
+}
+
 // Orders Tab with full management
 function OrdersTab() {
   const { orders, updateOrder, formatMoney, getProductById } = useStore()
@@ -265,6 +282,38 @@ function OrdersTab() {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'highest'>('newest')
   const [deliveryLinks, setDeliveryLinks] = useState<Record<string, string>>({})
   const [editNotes, setEditNotes] = useState<Record<string, string>>({})
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
+  const [slipModal, setSlipModal] = useState<string | null>(null)
+  const [verifyingSlip, setVerifyingSlip] = useState<string | null>(null)
+  const [slipResults, setSlipResults] = useState<Record<string, { ok: boolean; verified?: boolean; amount?: number; sender?: { name?: string }; transRef?: string; error?: string }>>({})
+
+  const toggleExpand = (id: string) => {
+    setExpandedOrders(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const handleVerifySlip = async (orderId: string, slipData: string) => {
+    setVerifyingSlip(orderId)
+    try {
+      const res = await fetch('/api/verify-slip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slip_data: slipData }),
+      })
+      const data = await res.json()
+      setSlipResults(prev => ({ ...prev, [orderId]: data }))
+      if (data.ok && data.verified) toast.success(`สลิปถูกต้อง ยอด ฿${data.amount}`)
+      else toast.error(data.error || 'ตรวจสลิปไม่ผ่าน')
+    } catch {
+      toast.error('ไม่สามารถตรวจสลิปได้')
+    } finally {
+      setVerifyingSlip(null)
+    }
+  }
 
   const statusLabels: Record<string, { label: string; color: string }> = {
     pending: { label: 'รอตรวจสลิป', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' },
@@ -383,205 +432,219 @@ function OrdersTab() {
         </div>
       </div>
 
+      {slipModal && <SlipModal src={slipModal} onClose={() => setSlipModal(null)} />}
+
       {filteredOrders.length > 0 ? (
         filteredOrders.map(order => {
           const status = statusLabels[order.status] || statusLabels.pending
           const isPending = order.status === 'pending'
           const isDelivered = order.status === 'delivered'
-          const defaultLink = order.items[0] ? getProductById(order.items[0].id)?.download_url || '' : ''
+          const isCancelled = order.status === 'cancelled'
+          const isExpanded = expandedOrders.has(order.id)
+          const defaultLink = order.items.map(i => getProductById(i.id)?.download_url || '').filter(Boolean)[0] || ''
           const isEditingNote = editNotes[order.id] !== undefined
+          const slipResult = slipResults[order.id]
+          const timeAgo = (() => {
+            const diff = Date.now() - new Date(order.created_at).getTime()
+            if (diff < 60000) return 'เมื่อกี้'
+            if (diff < 3600000) return `${Math.floor(diff / 60000)} นาทีที่แล้ว`
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)} ชม.ที่แล้ว`
+            return new Date(order.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })
+          })()
 
           return (
-            <div key={order.id} className={`p-6 rounded-2xl border bg-card/50 ${isPending ? 'border-yellow-500/30' : 'border-border'}`}>
-              <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    <h3 className="text-xl font-bold">#{order.order_code}</h3>
-                    <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${status.color}`}>
-                      {status.label}
-                    </span>
-                    <button
-                      onClick={() => { navigator.clipboard.writeText(order.order_code); toast.success('คัดลอกแล้ว') }}
-                      className="p-1 rounded hover:bg-muted/50 text-muted-foreground"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
+            <div key={order.id} className={`rounded-2xl border bg-card/50 overflow-hidden transition-all ${isPending ? 'border-yellow-500/40' : isCancelled ? 'border-border/40 opacity-70' : 'border-border'}`}>
+              {/* Collapsed header — always visible */}
+              <button
+                onClick={() => toggleExpand(order.id)}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/20 transition-colors text-left"
+              >
+                {/* Status dot */}
+                <span className={`w-2 h-2 rounded-full shrink-0 ${isPending ? 'bg-yellow-500 animate-pulse' : isDelivered ? 'bg-emerald-500' : isCancelled ? 'bg-muted-foreground' : 'bg-blue-500'}`} />
+                {/* Order code */}
+                <span className="font-bold text-sm font-mono shrink-0">#{order.order_code}</span>
+                {/* Status badge */}
+                <span className={`hidden sm:inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${status.color}`}>
+                  {status.label}
+                </span>
+                {/* Customer */}
+                <span className="text-xs text-muted-foreground truncate flex-1">@{order.customer_username || order.customer_name || '-'}</span>
+                {/* Has slip indicator */}
+                {order.slip_data && (
+                  <span className="hidden sm:flex items-center gap-1 text-[10px] text-blue-400 border border-blue-500/30 rounded px-1.5 py-0.5 shrink-0">
+                    <Eye className="w-2.5 h-2.5" /> สลิป
+                  </span>
+                )}
+                {/* Amount */}
+                <span className="font-bold text-primary text-sm shrink-0">{formatMoney(order.total_amount)}</span>
+                {/* Time */}
+                <span className="text-xs text-muted-foreground shrink-0 hidden md:block">{timeAgo}</span>
+                {/* Expand icon */}
+                <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Expanded content */}
+              {isExpanded && (
+                <div className="px-4 pb-4 border-t border-border/30 pt-4 space-y-3">
+                  {/* Top row: status select + time */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Select value={order.status} onValueChange={value => updateOrder(order.id, { status: value as Order['status'] })}>
+                      <SelectTrigger className="w-40 h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(statusLabels).map(([value, { label }]) => (
+                          <SelectItem key={value} value={value}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <button onClick={() => { navigator.clipboard.writeText(order.order_code); toast.success('คัดลอกแล้ว') }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                      <Copy className="w-3 h-3" /> คัดลอกเลขออเดอร์
                     </button>
                     {order.promo_code && (
                       <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 text-xs font-bold border border-emerald-500/30">
                         🏷 {order.promo_code} -{formatMoney(order.discount_amount || 0)}
                       </span>
                     )}
+                    <span className="text-xs text-muted-foreground ml-auto">{new Date(order.created_at).toLocaleString('th-TH')}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">@{order.customer_username || '-'} · {new Date(order.created_at).toLocaleString('th-TH')}</p>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <p className="text-2xl font-bold text-primary">{formatMoney(order.total_amount)}</p>
-                  <Select
-                    value={order.status}
-                    onValueChange={value => updateOrder(order.id, { status: value as Order['status'] })}
-                  >
-                    <SelectTrigger className="w-[160px] h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(statusLabels).map(([value, { label }]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
 
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
-                {/* Contact Info */}
-                <div className="p-4 rounded-xl border border-border bg-background/50 space-y-3">
-                  {/* Customer name */}
-                  {(order.customer_name || order.customer_username) && (
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <span className="text-sm font-semibold">{order.customer_name || order.customer_username}</span>
-                      {order.customer_username && order.customer_name !== order.customer_username && (
-                        <span className="text-xs text-muted-foreground">@{order.customer_username}</span>
+                  {/* Main grid: info + slip */}
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {/* Left: customer info + items */}
+                    <div className="space-y-2 text-sm">
+                      {/* Customer */}
+                      <div className="flex items-center gap-2 p-2.5 rounded-xl bg-background/50 border border-border/50">
+                        <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <span className="font-medium">{order.customer_name || order.customer_username || '-'}</span>
+                        {order.customer_username && order.customer_name && order.customer_name !== order.customer_username && (
+                          <span className="text-xs text-muted-foreground">@{order.customer_username}</span>
+                        )}
+                      </div>
+                      {/* Phone */}
+                      <div className="flex items-center gap-2 p-2.5 rounded-xl bg-background/50 border border-border/50">
+                        <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        {order.phone
+                          ? <><span className="font-mono flex-1">{order.phone}</span><a href={`tel:${order.phone}`} className="text-xs text-primary hover:underline">โทร</a></>
+                          : <span className="text-xs text-muted-foreground">ไม่มีเบอร์</span>
+                        }
+                      </div>
+                      {/* LINE */}
+                      <div className="flex items-center gap-2 p-2.5 rounded-xl bg-background/50 border border-border/50">
+                        <MessageCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        {order.line_id
+                          ? <><span className="font-mono flex-1">{order.line_id}</span>
+                              <a href={`https://line.me/ti/p/${order.line_id.replace('@', '~')}`} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-500 hover:underline">ทัก</a>
+                            </>
+                          : <span className="text-xs text-muted-foreground">ไม่มี LINE ID</span>
+                        }
+                      </div>
+                      {/* Items */}
+                      <div className="p-2.5 rounded-xl bg-background/50 border border-border/50">
+                        <p className="text-xs text-muted-foreground mb-1">สินค้า ({order.items.length} รายการ)</p>
+                        {order.items.map((item, i) => (
+                          <p key={i} className="text-xs">{item.name} <span className="text-muted-foreground">×{item.qty}</span> <span className="text-primary font-bold">{formatMoney(item.price * item.qty)}</span></p>
+                        ))}
+                      </div>
+                      {order.note && (
+                        <div className="p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/20 text-xs text-amber-400">
+                          หมายเหตุลูกค้า: {order.note}
+                        </div>
                       )}
                     </div>
-                  )}
-                  {/* Phone with call button */}
-                  {order.phone ? (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <span className="text-sm font-mono flex-1">{order.phone}</span>
-                      <a href={`tel:${order.phone}`} className="px-2 py-1 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors">
-                        โทร
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <span className="text-xs text-muted-foreground italic">ไม่มีเบอร์โทร</span>
-                    </div>
-                  )}
-                  {/* LINE with open button */}
-                  {order.line_id ? (
-                    <div className="flex items-center gap-2">
-                      <MessageCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <span className="text-sm font-mono flex-1">{order.line_id}</span>
-                      <a
-                        href={`https://line.me/ti/p/${order.line_id.replace('@', '~')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-xs font-bold hover:bg-emerald-500/20 transition-colors border border-emerald-500/30"
-                      >
-                        LINE
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <MessageCircle className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <span className="text-xs text-muted-foreground italic">ไม่มี LINE ID</span>
-                    </div>
-                  )}
-                  {/* Items */}
-                  <div className="pt-2 border-t border-border/50">
-                    <p className="text-xs text-muted-foreground mb-1">สินค้า</p>
-                    <p className="text-sm">{order.items.map(i => `${i.name} x${i.qty}`).join(', ')}</p>
-                  </div>
-                  {order.note && (
-                    <p className="text-xs text-muted-foreground border-t border-border/50 pt-2">หมายเหตุ: {order.note}</p>
-                  )}
-                </div>
-                {order.slip_data && (
-                  <div className="p-4 rounded-xl border border-border bg-background/50">
-                    <p className="text-sm text-muted-foreground mb-2">สลิปโอนเงิน:</p>
-                    <img src={order.slip_data} alt="Slip" className="max-h-48 rounded-lg border border-border object-contain" />
-                  </div>
-                )}
-              </div>
 
-              {/* Delivery Section */}
-              {!isDelivered && order.status !== 'cancelled' && (
-                <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 mb-3">
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <div>
-                      <p className="text-sm font-bold text-emerald-400">ส่งสินค้า</p>
-                      {defaultLink ? (
-                        <p className="text-xs text-muted-foreground">ใช้ลิงก์จากสินค้าอัตโนมัติ — แก้ไขได้ด้านล่าง</p>
-                      ) : (
-                        <p className="text-xs text-yellow-500">ยังไม่ได้เซ็ตลิงก์สินค้า — กรอกด้านล่าง</p>
-                      )}
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <Button
-                        onClick={() => handleRejectOrder(order.id)}
-                        variant="outline"
-                        className="gap-2 border-destructive/50 text-destructive hover:bg-destructive/10 shrink-0"
-                      >
-                        <X className="w-4 h-4" />
-                        ปฏิเสธ
-                      </Button>
-                      <Button
-                        onClick={() => handleConfirmDelivery(order.id)}
-                        className="gap-2 bg-emerald-600 hover:bg-emerald-700 shrink-0"
-                      >
-                        <Check className="w-4 h-4" />
-                        ยืนยันสลิป
-                      </Button>
-                    </div>
+                    {/* Right: slip */}
+                    {order.slip_data ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground font-medium">สลิปโอนเงิน</p>
+                        <button onClick={() => setSlipModal(order.slip_data)} className="block w-full group relative">
+                          <img src={order.slip_data} alt="Slip" className="w-full rounded-xl border border-border object-contain max-h-48 group-hover:brightness-90 transition-all" />
+                          <div className="absolute inset-0 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+                            <span className="flex items-center gap-1.5 text-white text-xs font-semibold bg-black/50 px-3 py-1.5 rounded-full">
+                              <Eye className="w-3.5 h-3.5" /> ดูเต็มจอ
+                            </span>
+                          </div>
+                        </button>
+                        {/* Slip verification */}
+                        <button
+                          onClick={() => handleVerifySlip(order.id, order.slip_data)}
+                          disabled={verifyingSlip === order.id}
+                          className="w-full py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold hover:bg-blue-500/20 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        >
+                          {verifyingSlip === order.id
+                            ? <><Loader2 className="w-3 h-3 animate-spin" /> กำลังตรวจ...</>
+                            : <><Shield className="w-3 h-3" /> ตรวจสลิปอัตโนมัติ</>
+                          }
+                        </button>
+                        {slipResult && (
+                          <div className={`p-2.5 rounded-lg text-xs border ${slipResult.ok && slipResult.verified !== false ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+                            {slipResult.ok && slipResult.verified !== false
+                              ? <>✓ สลิปถูกต้อง {slipResult.amount && `฿${slipResult.amount}`} {slipResult.sender?.name && `จาก ${slipResult.sender.name}`}</>
+                              : <>✗ {slipResult.error || 'ตรวจสลิปไม่ผ่าน'}</>
+                            }
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center rounded-xl border border-dashed border-border/50 bg-background/30 text-xs text-muted-foreground p-8">
+                        ยังไม่มีสลิป
+                      </div>
+                    )}
                   </div>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder={defaultLink || 'วางลิงก์สินค้า เช่น Google Drive, Dropbox...'}
-                      value={deliveryLinks[order.id] ?? (order.delivery_link || defaultLink)}
-                      onChange={e => setDeliveryLinks(prev => ({ ...prev, [order.id]: e.target.value }))}
-                      className="flex-1 text-sm"
-                    />
+
+                  {/* Delivery */}
+                  {!isDelivered && !isCancelled && (
+                    <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5">
+                      <p className="text-xs font-bold text-emerald-400 mb-2">ส่งสินค้า {!defaultLink && <span className="text-yellow-500 font-normal">— ยังไม่มีลิงก์สินค้า กรอกด้านล่าง</span>}</p>
+                      <div className="flex gap-2 mb-2">
+                        <Input
+                          placeholder={defaultLink || 'วางลิงก์ เช่น Google Drive, Dropbox...'}
+                          value={deliveryLinks[order.id] ?? (order.delivery_link || defaultLink)}
+                          onChange={e => setDeliveryLinks(prev => ({ ...prev, [order.id]: e.target.value }))}
+                          className="flex-1 text-xs h-8"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={() => handleRejectOrder(order.id)} variant="outline" size="sm" className="gap-1.5 border-destructive/50 text-destructive hover:bg-destructive/10 text-xs h-8">
+                          <X className="w-3 h-3" /> ปฏิเสธ
+                        </Button>
+                        <Button onClick={() => handleConfirmDelivery(order.id)} size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-xs h-8 flex-1">
+                          <Check className="w-3 h-3" /> ยืนยันสลิป
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {isDelivered && order.delivery_link && (
+                    <div className="p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex items-center gap-2 text-xs">
+                      <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-emerald-400">ส่งแล้ว: </span>
+                        <a href={order.delivery_link} target="_blank" rel="noopener noreferrer" className="text-emerald-300 hover:underline break-all">{order.delivery_link}</a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Admin Note */}
+                  <div className="p-2.5 rounded-xl border border-border bg-background/50">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs text-muted-foreground flex items-center gap-1"><StickyNote className="w-3 h-3" /> โน้ตแอดมิน</span>
+                      {!isEditingNote
+                        ? <button onClick={() => setEditNotes(prev => ({ ...prev, [order.id]: order.admin_note || '' }))} className="text-xs text-primary hover:underline">แก้ไข</button>
+                        : <div className="flex gap-2">
+                            <button onClick={() => handleSaveNote(order.id)} className="text-xs text-emerald-500 hover:underline">บันทึก</button>
+                            <button onClick={() => setEditNotes(prev => { const n = { ...prev }; delete n[order.id]; return n })} className="text-xs text-muted-foreground hover:underline">ยกเลิก</button>
+                      </div>
+                      }
+                    </div>
+                    {isEditingNote ? (
+                      <Textarea value={editNotes[order.id]} onChange={e => setEditNotes(prev => ({ ...prev, [order.id]: e.target.value }))} rows={2} className="text-xs mt-1" placeholder="จดโน้ต..." />
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1">{order.admin_note || 'ยังไม่มีโน้ต'}</p>
+                    )}
                   </div>
                 </div>
               )}
-
-              {isDelivered && order.delivery_link && (
-                <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 mb-3 flex items-center gap-3">
-                  <Check className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-emerald-400 mb-0.5">ส่งแล้ว — ลูกค้าเห็นลิงก์นี้:</p>
-                    <a href={order.delivery_link} target="_blank" rel="noopener noreferrer" className="text-sm text-emerald-300 hover:underline break-all">
-                      {order.delivery_link}
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* Admin Note */}
-              <div className="p-3 rounded-xl border border-border bg-background/50">
-                <div className="flex items-center justify-between mb-2">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <StickyNote className="w-3 h-3" /> โน้ตแอดมิน
-                  </Label>
-                  {!isEditingNote ? (
-                    <button
-                      onClick={() => setEditNotes(prev => ({ ...prev, [order.id]: order.admin_note || '' }))}
-                      className="text-xs text-primary hover:underline"
-                    >
-                      แก้ไข
-                    </button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <button onClick={() => handleSaveNote(order.id)} className="text-xs text-emerald-500 hover:underline">บันทึก</button>
-                      <button onClick={() => setEditNotes(prev => { const n = { ...prev }; delete n[order.id]; return n })} className="text-xs text-muted-foreground hover:underline">ยกเลิก</button>
-                    </div>
-                  )}
-                </div>
-                {isEditingNote ? (
-                  <Textarea
-                    value={editNotes[order.id]}
-                    onChange={e => setEditNotes(prev => ({ ...prev, [order.id]: e.target.value }))}
-                    rows={2}
-                    className="text-sm"
-                    placeholder="จดโน้ตสำหรับออเดอร์นี้..."
-                  />
-                ) : (
-                  <p className="text-sm text-muted-foreground">{order.admin_note || 'ยังไม่มีโน้ต'}</p>
-                )}
-              </div>
             </div>
           )
         })

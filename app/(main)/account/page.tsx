@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { User, LogOut, Package, Clock, CheckCircle, XCircle, Truck } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 const statusConfig = {
   pending: { label: 'รอตรวจสลิป', icon: Clock, color: 'text-yellow-500' },
