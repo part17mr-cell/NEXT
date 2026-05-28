@@ -53,13 +53,19 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between px-5 gap-4">
           {/* Brand */}
           <Link href="/" className="flex items-center gap-3 group">
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center overflow-hidden"
+              className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center overflow-hidden shrink-0"
             >
-              <Sparkles className="w-5 h-5 text-primary" />
-              <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent" />
+              {settings.brand.logoUrl ? (
+                <img src={settings.brand.logoUrl} alt={settings.brand.storeName} className="w-full h-full object-contain" />
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent" />
+                </>
+              )}
             </motion.div>
             <div className="hidden sm:block">
               <p className="font-display font-bold text-base tracking-tight">{settings.brand.storeName}</p>
@@ -185,8 +191,12 @@ export function Navbar() {
                 {/* Header */}
                 <div className="p-6 border-b border-border/50">
                   <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center">
-                      <Sparkles className="w-5 h-5 text-primary" />
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center overflow-hidden shrink-0">
+                      {settings.brand.logoUrl ? (
+                        <img src={settings.brand.logoUrl} alt={settings.brand.storeName} className="w-full h-full object-contain" />
+                      ) : (
+                        <Sparkles className="w-5 h-5 text-primary" />
+                      )}
                     </div>
                     <div>
                       <p className="font-display font-bold">{settings.brand.storeName}</p>

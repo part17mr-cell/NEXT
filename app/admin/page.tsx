@@ -1509,7 +1509,7 @@ function SettingsTab() {
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label>Logo <span className="text-xs text-muted-foreground font-normal">— แนะนำ 200×60px หรือ 400×120px (PNG/SVG พื้นหลังโปร่งใส)</span></Label>
+                <Label>Logo (ไอคอนมุมซ้ายบน) <span className="text-xs text-muted-foreground font-normal">— แนะนำ 160×160px หรือ 200×200px สี่เหลี่ยมจัตุรัส (PNG พื้นหลังโปร่งใส)</span></Label>
                 <ImageInput
                   value={form.brand.logoUrl || ''}
                   onChange={v => setForm(prev => ({ ...prev, brand: { ...prev.brand, logoUrl: v } }))}
