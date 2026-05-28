@@ -917,6 +917,54 @@ function ProductForm({
           />
           <Label>เปิดขาย</Label>
         </div>
+
+        {/* Stats & Flash Sale */}
+        <div className="sm:col-span-2 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-4">
+          <p className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+            <TrendingUp className="w-3.5 h-3.5" />
+            สถิติสินค้า (แสดงบนการ์ด)
+          </p>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">คะแนนรีวิว (0–5)</Label>
+              <Input
+                type="number"
+                min={0} max={5} step={0.1}
+                placeholder="เช่น 4.8"
+                value={form.rating ?? ''}
+                onChange={e => setForm(prev => ({ ...prev, rating: e.target.value === '' ? undefined : Number(e.target.value) }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">ยอดดู</Label>
+              <Input
+                type="number"
+                min={0}
+                placeholder="เช่น 1500"
+                value={form.views ?? ''}
+                onChange={e => setForm(prev => ({ ...prev, views: e.target.value === '' ? undefined : Number(e.target.value) }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">ขายแล้ว</Label>
+              <Input
+                type="number"
+                min={0}
+                placeholder="เช่น 230"
+                value={form.sold ?? ''}
+                onChange={e => setForm(prev => ({ ...prev, sold: e.target.value === '' ? undefined : Number(e.target.value) }))}
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Flash Sale หมดเวลา (ว่างเปล่า = ปิด)</Label>
+            <Input
+              type="datetime-local"
+              value={form.flash_sale_end ? form.flash_sale_end.slice(0, 16) : ''}
+              onChange={e => setForm(prev => ({ ...prev, flash_sale_end: e.target.value ? new Date(e.target.value).toISOString() : undefined }))}
+            />
+          </div>
+        </div>
       </div>
       <div className="flex gap-3 pt-4">
         <Button type="submit" className="gap-2">
@@ -1401,6 +1449,7 @@ function SettingsTab() {
     { id: 'contact', label: 'ติดต่อ', icon: MessageCircle },
     { id: 'payment', label: 'ชำระเงิน', icon: CreditCard },
     { id: 'pages', label: 'หน้าอื่นๆ', icon: FileText },
+    { id: 'stats', label: 'สถิติหน้าแรก', icon: TrendingUp },
     { id: 'visibility', label: 'การแสดงผล', icon: Eye },
     { id: 'security', label: 'ความปลอดภัย', icon: Shield },
   ]
@@ -1826,6 +1875,49 @@ function SettingsTab() {
                     />
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Hero Stats Settings */}
+        {activeSection === 'stats' && (
+          <div className="p-6 rounded-2xl border border-border bg-card/50">
+            <h3 className="font-bold text-lg mb-1 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              ตั้งค่าสถิติหน้าแรก
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              ตัวเลขฐานที่จะบวกเพิ่มกับจำนวนจริงในระบบ — เช่น ตั้ง 500 จะแสดง 500 + สมาชิกจริง
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  ฐานจำนวนสมาชิก
+                </Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={form.heroStats?.baseMembers ?? 0}
+                  onChange={e => setForm(prev => ({ ...prev, heroStats: { ...prev.heroStats, baseMembers: Number(e.target.value) } }))}
+                  placeholder="0"
+                />
+                <p className="text-xs text-muted-foreground">แสดงผล: {((form.heroStats?.baseMembers ?? 0)).toLocaleString('th-TH')} + สมาชิกจริง</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Package className="w-4 h-4 text-muted-foreground" />
+                  ฐานจำนวนคำสั่งซื้อ
+                </Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={form.heroStats?.baseOrders ?? 0}
+                  onChange={e => setForm(prev => ({ ...prev, heroStats: { ...prev.heroStats, baseOrders: Number(e.target.value) } }))}
+                  placeholder="0"
+                />
+                <p className="text-xs text-muted-foreground">แสดงผล: {((form.heroStats?.baseOrders ?? 0)).toLocaleString('th-TH')} + ออเดอร์จริง</p>
               </div>
             </div>
           </div>

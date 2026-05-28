@@ -155,6 +155,10 @@ export interface StoreSettings {
     footerAdmin: boolean
     footerPolicies: boolean
   }
+  heroStats: {
+    baseMembers: number
+    baseOrders: number
+  }
   security: {
     adminUsername: string
     adminPassword: string
@@ -237,6 +241,10 @@ export const defaultSettings: StoreSettings = {
     cartFab: true,
     footerAdmin: false,
     footerPolicies: true
+  },
+  heroStats: {
+    baseMembers: 0,
+    baseOrders: 0,
   },
   security: {
     adminUsername: 'admin',

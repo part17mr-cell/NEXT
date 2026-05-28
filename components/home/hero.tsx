@@ -324,9 +324,9 @@ export function HomeHero() {
             className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto"
           >
             {[
-              { label: 'สมาชิก', value: members.length.toLocaleString('th-TH'), icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', glow: '' },
+              { label: 'สมาชิก', value: (members.length + (settings.heroStats?.baseMembers ?? 0)).toLocaleString('th-TH'), icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', glow: '' },
               { label: 'สินค้า', value: activeProducts.length.toString(), icon: Box, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', glow: '' },
-              { label: 'คำสั่งซื้อ', value: orders.length.toLocaleString('th-TH'), icon: Package, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', glow: '' },
+              { label: 'คำสั่งซื้อ', value: (orders.length + (settings.heroStats?.baseOrders ?? 0)).toLocaleString('th-TH'), icon: Package, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', glow: '' },
               { label: 'เริ่มต้นเพียง', value: minPrice === Infinity ? '฿0' : formatMoney(minPrice), icon: Wallet, color: 'text-primary', bg: 'bg-primary/10 border-primary/30', glow: 'shadow-lg shadow-primary/15', highlight: true },
             ].map((stat, index) => (
               <motion.div
