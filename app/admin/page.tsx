@@ -285,7 +285,7 @@ function OrdersTab() {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
   const [slipModal, setSlipModal] = useState<string | null>(null)
   const [verifyingSlip, setVerifyingSlip] = useState<string | null>(null)
-  const [slipResults, setSlipResults] = useState<Record<string, { ok: boolean; verified?: boolean; amount?: number; sender?: { name?: string }; transRef?: string; error?: string }>>({})
+  const [slipResults, setSlipResults] = useState<Record<string, { ok: boolean; verified?: boolean; provider?: string; amount?: number; sender?: string; receiver?: string; sendingBank?: string; transRef?: string; error?: string }>>({})
 
   const toggleExpand = (id: string) => {
     setExpandedOrders(prev => {
@@ -578,10 +578,21 @@ function OrdersTab() {
                         </button>
                         {slipResult && (
                           <div className={`p-2.5 rounded-lg text-xs border ${slipResult.ok && slipResult.verified !== false ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
-                            {slipResult.ok && slipResult.verified !== false
-                              ? <>✓ สลิปถูกต้อง {slipResult.amount && `฿${slipResult.amount}`} {slipResult.sender?.name && `จาก ${slipResult.sender.name}`}</>
-                              : <>✗ {slipResult.error || 'ตรวจสลิปไม่ผ่าน'}</>
-                            }
+                            {slipResult.ok && slipResult.verified !== false ? (
+                              <span>
+                                ✓ สลิปถูกต้อง
+                                {slipResult.amount ? ` ฿${slipResult.amount.toLocaleString('th-TH')}` : ''}
+                                {slipResult.sender ? ` · จาก ${slipResult.sender}` : ''}
+                                {slipResult.sendingBank ? ` (${slipResult.sendingBank})` : ''}
+                                {slipResult.receiver ? ` → ${slipResult.receiver}` : ''}
+                                <span className="block opacity-50 mt-0.5">
+                                  {slipResult.provider === 'tabscanner' ? 'via Tabscanner' : 'via EasySlip'}
+                                  {slipResult.transRef ? ` · Ref: ${slipResult.transRef}` : ''}
+                                </span>
+                              </span>
+                            ) : (
+                              <>✗ {slipResult.error || 'ตรวจสลิปไม่ผ่าน'}</>
+                            )}
                           </div>
                         )}
                       </div>

@@ -1,79 +1,190 @@
 import { NextResponse } from 'next/server'
 
-// EasySlip API — https://easyslip.com/
-// Set EASYSLIP_API_KEY in Vercel environment variables
+// ── Tabscanner ────────────────────────────────────────────────
+const TABSCANNER_PROCESS = 'https://api.tabscanner.com/api/2/process'
+const TABSCANNER_RESULT  = 'https://api.tabscanner.com/api/result'
+const TABSCANNER_KEY     = process.env.TABSCANNER_API_KEY || ''
+
+// ── EasySlip ──────────────────────────────────────────────────
 const EASYSLIP_API = 'https://developer.easyslip.com/api/v1/verify'
 const EASYSLIP_KEY = process.env.EASYSLIP_API_KEY || ''
 
+// Shared result type
+interface SlipResult {
+  ok: boolean
+  verified: boolean
+  provider: 'tabscanner' | 'easyslip'
+  transRef?: string | null
+  date?: string | null
+  amount?: number | null
+  sendingBank?: string | null
+  receivingBank?: string | null
+  sender?: string | null
+  receiver?: string | null
+  error?: string
+  raw?: unknown
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function base64ToBlob(slip_data: string): { blob: Blob; ext: string } {
+  const base64 = slip_data.replace(/^data:image\/\w+;base64,/, '')
+  const buffer = Buffer.from(base64, 'base64')
+  const mimeMatch = slip_data.match(/^data:(image\/\w+);base64,/)
+  const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg'
+  const ext  = mime.split('/')[1] || 'jpg'
+  return { blob: new Blob([buffer], { type: mime }), ext }
+}
+
+async function tabscannerPoll(token: string, attempts = 8, delay = 1200): Promise<Record<string, unknown> | null> {
+  for (let i = 0; i < attempts; i++) {
+    await new Promise(r => setTimeout(r, delay))
+    const res = await fetch(`${TABSCANNER_RESULT}/${token}`, {
+      headers: { Authorization: TABSCANNER_KEY },
+      cache: 'no-store',
+    })
+    if (!res.ok) return null
+    const data = await res.json() as Record<string, unknown>
+    if (data.status !== 'pending') return data
+  }
+  return null
+}
+
+// ── Provider: Tabscanner ──────────────────────────────────────
+async function verifyWithTabscanner(slip_data: string): Promise<SlipResult> {
+  const { blob, ext } = base64ToBlob(slip_data)
+  const form = new FormData()
+  form.append('file', blob, `slip.${ext}`)
+
+  const submitRes = await fetch(TABSCANNER_PROCESS, {
+    method: 'POST',
+    headers: { Authorization: TABSCANNER_KEY },
+    body: form,
+  })
+
+  if (!submitRes.ok) {
+    throw new Error(`Tabscanner submit HTTP ${submitRes.status}`)
+  }
+
+  const submitData = await submitRes.json() as Record<string, unknown>
+  if (submitData.status !== 'success' || !submitData.token) {
+    throw new Error('Tabscanner: ไม่ได้รับ token')
+  }
+
+  const result = await tabscannerPoll(submitData.token as string)
+  if (!result || result.status !== 'success') {
+    throw new Error('Tabscanner: อ่านสลิปไม่สำเร็จ หรือหมดเวลา')
+  }
+
+  const d = (result.data || {}) as Record<string, unknown>
+  return {
+    ok: true,
+    verified: true,
+    provider: 'tabscanner',
+    transRef:      (d.transRef      as string) || null,
+    date:          (d.date          as string) || null,
+    amount:        (d.amount        as number) || null,
+    sendingBank:   (d.sendingBank   as string) || null,
+    receivingBank: (d.receivingBank as string) || null,
+    sender:        (d.sender        as string) || null,
+    receiver:      (d.receiver      as string) || null,
+    raw: result,
+  }
+}
+
+// ── Provider: EasySlip ────────────────────────────────────────
+async function verifyWithEasySlip(slip_data: string): Promise<SlipResult> {
+  const { blob, ext } = base64ToBlob(slip_data)
+  const form = new FormData()
+  form.append('file', blob, `slip.${ext}`)
+
+  const res = await fetch(EASYSLIP_API, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${EASYSLIP_KEY}` },
+    body: form,
+  })
+
+  if (!res.ok) throw new Error(`EasySlip HTTP ${res.status}`)
+
+  const data = await res.json() as Record<string, unknown>
+  if ((data.status as number) !== 200) {
+    throw new Error(`EasySlip: ${data.message || 'ไม่สำเร็จ'}`)
+  }
+
+  const d = (data.data || {}) as Record<string, unknown>
+  const amount = (d.amount as Record<string, unknown> | undefined)
+  const sender = (d.sender as Record<string, unknown> | undefined)
+  const receiver = (d.receiver as Record<string, unknown> | undefined)
+  const senderBank = (sender?.bank as Record<string, unknown> | undefined)
+  const receiverBank = (receiver?.bank as Record<string, unknown> | undefined)
+
+  return {
+    ok: true,
+    verified: true,
+    provider: 'easyslip',
+    transRef:      (d.transRef as string) || null,
+    date:          (d.date     as string) || null,
+    amount:        (amount?.amount as number) || null,
+    sendingBank:   (senderBank?.short   as string) || null,
+    receivingBank: (receiverBank?.short  as string) || null,
+    sender:        (sender?.displayName as string) || (senderBank?.name as string) || null,
+    receiver:      (receiver?.displayName as string) || null,
+    raw: data,
+  }
+}
+
+// ── Main handler ──────────────────────────────────────────────
 export async function POST(request: Request) {
   try {
-    if (!EASYSLIP_KEY) {
-      return NextResponse.json(
-        { ok: false, error: 'ยังไม่ได้ตั้งค่า EASYSLIP_API_KEY ในระบบ' },
-        { status: 503 }
-      )
-    }
-
-    const body = await request.json()
-    const { slip_data } = body as { slip_data: string }
+    const body = await request.json() as { slip_data?: string }
+    const { slip_data } = body
 
     if (!slip_data) {
       return NextResponse.json({ ok: false, error: 'ไม่มีข้อมูลสลิป' }, { status: 400 })
     }
 
-    // Convert base64 data URL to blob for FormData
-    const base64 = slip_data.replace(/^data:image\/\w+;base64,/, '')
-    const buffer = Buffer.from(base64, 'base64')
-    const mimeMatch = slip_data.match(/^data:(image\/\w+);base64,/)
-    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg'
+    const hasTabscanner = !!TABSCANNER_KEY
+    const hasEasySlip   = !!EASYSLIP_KEY
 
-    const formData = new FormData()
-    const blob = new Blob([buffer], { type: mime })
-    formData.append('file', blob, 'slip.jpg')
-
-    const res = await fetch(EASYSLIP_API, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${EASYSLIP_KEY}` },
-      body: formData,
-    })
-
-    if (!res.ok) {
-      const text = await res.text()
+    if (!hasTabscanner && !hasEasySlip) {
       return NextResponse.json(
-        { ok: false, error: `EasySlip API error: ${res.status}`, detail: text },
-        { status: res.status }
+        { ok: false, error: 'ยังไม่ได้ตั้งค่า API Key ในระบบ (TABSCANNER_API_KEY หรือ EASYSLIP_API_KEY)' },
+        { status: 503 }
       )
     }
 
-    const data = await res.json()
+    const errors: string[] = []
 
-    // Normalize EasySlip response to our format
-    const result = {
-      ok: true,
-      verified: data.status === 200,
-      transRef: data.data?.transRef || null,
-      date: data.data?.date || null,
-      amount: data.data?.amount?.amount || null,
-      currency: data.data?.amount?.local?.currency || 'THB',
-      sender: {
-        name: data.data?.sender?.bank?.name || null,
-        account: data.data?.sender?.account?.value || null,
-        bank: data.data?.sender?.bank?.short || null,
-      },
-      receiver: {
-        name: data.data?.receiver?.displayName || null,
-        account: data.data?.receiver?.account?.value || null,
-        bank: data.data?.receiver?.bank?.short || null,
-      },
-      raw: data,
+    // ① Try Tabscanner first (if key available)
+    if (hasTabscanner) {
+      try {
+        const result = await verifyWithTabscanner(slip_data)
+        return NextResponse.json(result)
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        console.warn('[verify-slip] Tabscanner failed:', msg)
+        errors.push(`Tabscanner: ${msg}`)
+      }
     }
 
-    return NextResponse.json(result)
+    // ② Fallback to EasySlip
+    if (hasEasySlip) {
+      try {
+        const result = await verifyWithEasySlip(slip_data)
+        return NextResponse.json(result)
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        console.warn('[verify-slip] EasySlip failed:', msg)
+        errors.push(`EasySlip: ${msg}`)
+      }
+    }
+
+    // Both failed
+    return NextResponse.json(
+      { ok: false, error: 'ตรวจสลิปไม่สำเร็จ', detail: errors },
+      { status: 422 }
+    )
   } catch (err) {
     console.error('[verify-slip]', err)
-    return NextResponse.json(
-      { ok: false, error: 'เกิดข้อผิดพลาดภายในระบบ' },
-      { status: 500 }
-    )
+    return NextResponse.json({ ok: false, error: 'เกิดข้อผิดพลาดภายในระบบ' }, { status: 500 })
   }
 }
