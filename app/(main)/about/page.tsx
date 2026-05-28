@@ -20,7 +20,12 @@ export default function AboutPage() {
           <div className="space-y-4">
             <div className="p-6 rounded-2xl border border-border bg-background/50">
               <h2 className="text-xl font-bold mb-2">รายละเอียด</h2>
-              <p className="text-muted-foreground">{settings.pages.aboutLead}</p>
+              <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                <li>ร้านค้าออนไลน์สำหรับสินค้าดิจิทัลและบริการ</li>
+                <li>สั่งซื้อง่าย ชำระเงินผ่าน QR Code พร้อมเพย์</li>
+                <li>ส่งมอบสินค้าดิจิทัลรวดเร็วหลังยืนยันการชำระเงิน</li>
+                <li>มีทีมงานคอยดูแลและช่วยเหลือตลอด</li>
+              </ul>
             </div>
 
             <div className="p-6 rounded-2xl border border-border bg-background/50">

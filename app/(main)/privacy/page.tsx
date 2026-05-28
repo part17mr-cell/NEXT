@@ -20,7 +20,12 @@ export default function PrivacyPage() {
           <div className="space-y-4">
             <div className="p-6 rounded-2xl border border-border bg-background/50">
               <h2 className="text-xl font-bold mb-2">การเก็บข้อมูล</h2>
-              <p className="text-muted-foreground">{settings.pages.privacyLead}</p>
+              <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                <li>เก็บเฉพาะ Username และรหัสผ่านที่เข้ารหัสแล้ว</li>
+                <li>ไม่มีการเก็บอีเมล หมายเลขโทรศัพท์ หรือข้อมูลส่วนตัวเกิน</li>
+                <li>ข้อมูลออเดอร์ถูกบันทึกเพื่อการส่งมอบสินค้าเท่านั้น</li>
+                <li>ไม่มีการแชร์ข้อมูลกับบุคคลที่สาม</li>
+              </ul>
             </div>
 
             <div className="p-6 rounded-2xl border border-border bg-background/50">

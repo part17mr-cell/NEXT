@@ -20,7 +20,12 @@ export default function RefundPage() {
           <div className="space-y-4">
             <div className="p-6 rounded-2xl border border-border bg-background/50">
               <h2 className="text-xl font-bold mb-2">เงื่อนไขการคืนเงิน</h2>
-              <p className="text-muted-foreground">{settings.pages.refundLead}</p>
+              <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                <li>สินค้าดิจิทัลที่ส่งมอบแล้วไม่รับคืนเงิน เว้นแต่มีปัญหาจากทางร้าน</li>
+                <li>ต้องขอคืนภายใน 24 ชั่วโมงหลังจากสั่งซื้อ</li>
+                <li>ต้องแสดงหลักฐานและเหตุผลที่ชัดเจน</li>
+                <li>ทางร้านขอสงวนสิทธิ์ตัดสินใจในทุกกรณี</li>
+              </ul>
             </div>
 
             <div className="p-6 rounded-2xl border border-border bg-background/50">
@@ -28,7 +33,7 @@ export default function RefundPage() {
               <ul className="list-disc list-inside text-muted-foreground space-y-1">
                 <li>ติดต่อแอดมินพร้อมเลขออเดอร์</li>
                 <li>แจ้งเหตุผลและหลักฐานประกอบ</li>
-                <li>รอการตรวจสอบภายใน 24-48 ชั่วโมง</li>
+                <li>รอการตรวจสอบภายใน 1 วัน (24 ชั่วโมง)</li>
                 <li>รับเงินคืนตามช่องทางที่ตกลง</li>
               </ul>
             </div>
