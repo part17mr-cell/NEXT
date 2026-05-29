@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Zap, Sparkles, Check, X, Eye, Package, User, Car, Boxes, Flame, Shield, Monitor, Gamepad2, Pencil, Save, Camera, Trash2, Clock, Users, Tag, Star, MessageSquare, Send } from 'lucide-react'
+import { ShoppingCart, Zap, Sparkles, Check, X, Eye, Package, User, Car, Boxes, Flame, Shield, Monitor, Gamepad2, Pencil, Save, Camera, Trash2, Clock, Users, Tag, Star, MessageSquare, Send, Gift } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { type Product } from '@/lib/store-data'
 import { useStore } from '@/lib/store-context'
@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogHeader } f
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 const categoryStyles: Record<string, { gradient: string; iconBg: string; textColor: string; Icon: LucideIcon }> = {
   'ACCOUNT':   { gradient: 'from-blue-500/30 via-blue-950/20 to-card',    iconBg: 'bg-blue-500/20 border border-blue-500/30',     textColor: 'text-blue-300',   Icon: User },
@@ -88,7 +89,8 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addToCart, formatMoney, isAdmin, products, updateProducts, openModal, closeModal, getProductRating, getProductSoldCount, getProductViewCount, incrementProductViews } = useStore()
+  const { addToCart, formatMoney, isAdmin, products, updateProducts, openModal, closeModal, getProductRating, getProductSoldCount, getProductViewCount, incrementProductViews, currentMember, createOrder } = useStore()
+  const router = useRouter()
   const [showDetail, setShowDetail] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
   const [showAdminEdit, setShowAdminEdit] = useState(false)
@@ -97,6 +99,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const price = product.sale_price || product.price
   const hasDiscount = product.price > price
+  const isFree = price === 0
   const discountPercent = hasDiscount ? Math.round((1 - price / product.price) * 100) : 0
   const savings = hasDiscount ? product.price - price : 0
   const catStyle = categoryStyles[product.category] || defaultStyle
@@ -131,6 +134,24 @@ export function ProductCard({ product }: ProductCardProps) {
     setIsAdding(true)
     addToCart(product.id)
     setTimeout(() => setIsAdding(false), 600)
+  }
+
+  const handleClaimFree = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    if (!currentMember) { router.push('/login'); return }
+    createOrder({
+      status: 'delivered',
+      customer_name: currentMember.display_name || currentMember.username,
+      customer_username: currentMember.username,
+      phone: '', line_id: '',
+      note: 'รับสินค้าฟรี',
+      paid_amount: 0, paid_at: new Date().toISOString(), total_amount: 0,
+      items: [{ id: product.id, sku: product.sku, name: product.name, category: product.category, price: 0, qty: 1, delivery_note: product.delivery_note }],
+      slip_data: '', member_id: currentMember.id, source: 'free_claim',
+      delivery_link: product.download_url || '',
+      admin_note: '', promo_code: '', discount_amount: 0,
+    })
+    toast.success(product.download_url ? 'รับสินค้าแล้ว! ดูลิงก์ได้ที่บัญชีของฉัน' : 'รับสินค้าแล้ว! แอดมินจะส่งให้เร็วๆ นี้')
   }
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -226,14 +247,20 @@ export function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
           
-          {/* Quick buy button — hidden when out of stock */}
+          {/* Quick buy / free button — hidden when out of stock */}
           {!isOutOfStock && (
             <div className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-10">
-              <Link href={`/checkout?product=${encodeURIComponent(product.id)}`}>
-                <Button size="icon" className="h-9 w-9 rounded-xl shadow-lg bg-white text-foreground hover:bg-white/90">
-                  <Zap className="w-4 h-4" />
+              {isFree ? (
+                <Button size="icon" onClick={e => handleClaimFree(e)} className="h-9 w-9 rounded-xl shadow-lg bg-emerald-500 text-white hover:bg-emerald-600">
+                  <Gift className="w-4 h-4" />
                 </Button>
-              </Link>
+              ) : (
+                <Link href={`/checkout?product=${encodeURIComponent(product.id)}`}>
+                  <Button size="icon" className="h-9 w-9 rounded-xl shadow-lg bg-white text-foreground hover:bg-white/90">
+                    <Zap className="w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
             </div>
           )}
 
@@ -308,7 +335,10 @@ export function ProductCard({ product }: ProductCardProps) {
                   <span className="text-[10px] text-red-400 font-bold">(-{discountPercent}%)</span>
                 )}
               </div>
-              <strong className="text-2xl text-primary font-black leading-tight">{formatMoney(price)}</strong>
+              {isFree
+                ? <strong className="text-2xl text-emerald-400 font-black leading-tight">ฟรี!</strong>
+                : <strong className="text-2xl text-primary font-black leading-tight">{formatMoney(price)}</strong>
+              }
             </div>
 
             {/* Scarcity bar */}
@@ -331,23 +361,36 @@ export function ProductCard({ product }: ProductCardProps) {
               </div>
             )}
 
-            {/* Buttons — cart icon + buy */}
+            {/* Buttons — cart icon + buy / free */}
             <div className="flex gap-2 mt-auto pt-1">
-              <Button
-                variant="outline"
-                size="icon"
-                className={`h-10 w-10 rounded-xl shrink-0 transition-all ${isAdding ? 'border-emerald-500 text-emerald-500' : 'border-primary/30 hover:bg-primary/10'}`}
-                onClick={handleAddToCart}
-                disabled={isAdding || isOutOfStock}
-              >
-                {isAdding ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
-              </Button>
-              <Link href={`/checkout?product=${encodeURIComponent(product.id)}`} className="flex-1">
-                <Button className="w-full h-10 font-bold shadow-lg shadow-primary/25 gap-1.5" disabled={isOutOfStock}>
-                  <Zap className="w-4 h-4" />
-                  {isOutOfStock ? 'หมดสต็อก' : 'ซื้อเลย'}
+              {!isFree && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`h-10 w-10 rounded-xl shrink-0 transition-all ${isAdding ? 'border-emerald-500 text-emerald-500' : 'border-primary/30 hover:bg-primary/10'}`}
+                  onClick={handleAddToCart}
+                  disabled={isAdding || isOutOfStock}
+                >
+                  {isAdding ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
                 </Button>
-              </Link>
+              )}
+              {isFree ? (
+                <Button
+                  className="w-full h-10 font-bold shadow-lg shadow-emerald-500/30 gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white"
+                  onClick={e => handleClaimFree(e)}
+                  disabled={isOutOfStock}
+                >
+                  <Gift className="w-4 h-4" />
+                  {isOutOfStock ? 'หมดสต็อก' : 'รับฟรี!'}
+                </Button>
+              ) : (
+                <Link href={`/checkout?product=${encodeURIComponent(product.id)}`} className="flex-1">
+                  <Button className="w-full h-10 font-bold shadow-lg shadow-primary/25 gap-1.5" disabled={isOutOfStock}>
+                    <Zap className="w-4 h-4" />
+                    {isOutOfStock ? 'หมดสต็อก' : 'ซื้อเลย'}
+                  </Button>
+                </Link>
+              )}
             </div>
 
             {isAdmin && (
@@ -416,7 +459,10 @@ export function ProductCard({ product }: ProductCardProps) {
                 {hasDiscount && (
                   <del className="text-[10px] text-muted-foreground/70 block leading-none">{formatMoney(product.price)}</del>
                 )}
-                <strong className="text-xl text-primary font-bold leading-none">{formatMoney(price)}</strong>
+                {isFree
+                  ? <strong className="text-xl text-emerald-400 font-bold leading-none">ฟรี!</strong>
+                  : <strong className="text-xl text-primary font-bold leading-none">{formatMoney(price)}</strong>
+                }
               </div>
               {savings > 0 && (
                 <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-[9px] font-bold">
@@ -432,24 +478,35 @@ export function ProductCard({ product }: ProductCardProps) {
               <span className="text-[9px] text-muted-foreground/50">{viewsDisplay.toLocaleString()} ยอดดู</span>
             </div>
 
-            {/* Add to Cart */}
-            <Button
-              className={`w-full gap-2 font-semibold h-10 transition-all duration-300 ${isAdding ? 'bg-emerald-500 hover:bg-emerald-500 scale-95' : 'shadow-lg shadow-primary/20 hover:shadow-primary/30'}`}
-              onClick={handleAddToCart}
-              disabled={isAdding || isOutOfStock}
-            >
-              <AnimatePresence mode="wait">
-                {isAdding ? (
-                  <motion.div key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="flex items-center gap-2">
-                    <Check className="w-4 h-4" /><span>เพิ่มแล้ว</span>
-                  </motion.div>
-                ) : (
-                  <motion.div key="cart" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="flex items-center gap-2">
-                    <ShoppingCart className="w-4 h-4" /><span>{isOutOfStock ? 'หมดสต็อก' : 'เพิ่มตะกร้า'}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </Button>
+            {/* Add to Cart / Free Claim */}
+            {isFree ? (
+              <Button
+                className="w-full gap-2 font-semibold h-10 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30"
+                onClick={handleClaimFree}
+                disabled={isOutOfStock}
+              >
+                <Gift className="w-4 h-4" />
+                {isOutOfStock ? 'หมดสต็อก' : 'รับฟรี!'}
+              </Button>
+            ) : (
+              <Button
+                className={`w-full gap-2 font-semibold h-10 transition-all duration-300 ${isAdding ? 'bg-emerald-500 hover:bg-emerald-500 scale-95' : 'shadow-lg shadow-primary/20 hover:shadow-primary/30'}`}
+                onClick={handleAddToCart}
+                disabled={isAdding || isOutOfStock}
+              >
+                <AnimatePresence mode="wait">
+                  {isAdding ? (
+                    <motion.div key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="flex items-center gap-2">
+                      <Check className="w-4 h-4" /><span>เพิ่มแล้ว</span>
+                    </motion.div>
+                  ) : (
+                    <motion.div key="cart" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="flex items-center gap-2">
+                      <ShoppingCart className="w-4 h-4" /><span>{isOutOfStock ? 'หมดสต็อก' : 'เพิ่มตะกร้า'}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Button>
+            )}
 
             {isAdmin && (
               <button
@@ -494,7 +551,8 @@ interface ProductDetailModalProps {
 }
 
 function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps) {
-  const { addToCart, formatMoney, isAdmin, products, updateProducts, currentMember, addReview, deleteReview, updateReview, getProductReviews, getProductRating, getProductSoldCount, getProductViewCount } = useStore()
+  const { addToCart, formatMoney, isAdmin, products, updateProducts, currentMember, createOrder, addReview, deleteReview, updateReview, getProductReviews, getProductRating, getProductSoldCount, getProductViewCount } = useStore()
+  const router = useRouter()
   const [isAdding, setIsAdding] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [selectedImageIdx, setSelectedImageIdx] = useState<number>(0)
@@ -508,6 +566,7 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
 
   const price = product.sale_price || product.price
   const hasDiscount = product.price > price
+  const isFree = price === 0
   const discountPercent = hasDiscount ? Math.round((1 - price / product.price) * 100) : 0
   const savings = hasDiscount ? product.price - price : 0
   const catStyle = categoryStyles[product.category] || defaultStyle
@@ -516,6 +575,24 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
   const isFlashSale = remaining !== null && remaining > 0
   const isLowStock = product.stock_qty !== null && product.stock_qty !== undefined && product.stock_qty > 0 && product.stock_qty <= 10
   const isOutOfStock = product.stock_qty !== null && product.stock_qty !== undefined && product.stock_qty === 0
+
+  const handleClaimFreeModal = () => {
+    if (!currentMember) { router.push('/login'); return }
+    createOrder({
+      status: 'delivered',
+      customer_name: currentMember.display_name || currentMember.username,
+      customer_username: currentMember.username,
+      phone: '', line_id: '',
+      note: 'รับสินค้าฟรี',
+      paid_amount: 0, paid_at: new Date().toISOString(), total_amount: 0,
+      items: [{ id: product.id, sku: product.sku, name: product.name, category: product.category, price: 0, qty: 1, delivery_note: product.delivery_note }],
+      slip_data: '', member_id: currentMember.id, source: 'free_claim',
+      delivery_link: product.download_url || '',
+      admin_note: '', promo_code: '', discount_amount: 0,
+    })
+    toast.success(product.download_url ? 'รับสินค้าแล้ว! ดูลิงก์ได้ที่บัญชีของฉัน' : 'รับสินค้าแล้ว! แอดมินจะส่งให้เร็วๆ นี้')
+    onClose()
+  }
 
   const modalHash = useMemo(() => {
     let h = 0
@@ -790,34 +867,50 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
           {/* Price & Actions */}
           <div className="flex items-center justify-between pt-3 border-t border-border/30">
             <div>
-              {hasDiscount && (
+              {hasDiscount && !isFree && (
                 <div className="flex items-center gap-1.5">
                   <del className="text-sm text-muted-foreground">{formatMoney(product.price)}</del>
                   {isFlashSale && <span className="text-xs text-red-400 font-bold">(-{discountPercent}%)</span>}
                 </div>
               )}
-              <strong className="text-2xl text-primary font-bold">{formatMoney(price)}</strong>
-              {savings > 0 && !isFlashSale && (
+              {isFree
+                ? <strong className="text-2xl text-emerald-400 font-bold">ฟรี!</strong>
+                : <strong className="text-2xl text-primary font-bold">{formatMoney(price)}</strong>
+              }
+              {savings > 0 && !isFlashSale && !isFree && (
                 <span className="flex items-center gap-1 mt-1 text-[11px] text-emerald-400 font-bold">
                   <Tag className="w-3 h-3" />ประหยัด {formatMoney(savings)}
                 </span>
               )}
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className={`gap-2 font-semibold transition-all ${isAdding ? 'bg-emerald-500 border-emerald-500 text-white' : ''}`}
-                onClick={handleAddToCart}
-                disabled={isAdding || isOutOfStock}
-              >
-                {isAdding ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
-                {isAdding ? 'เพิ่มแล้ว' : isOutOfStock ? 'หมดสต็อก' : 'เพิ่มตะกร้า'}
-              </Button>
-              <Link href={`/checkout?product=${encodeURIComponent(product.id)}`}>
-                <Button className="gap-2 font-semibold shadow-lg shadow-primary/30" disabled={isOutOfStock}>
-                  <Zap className="w-4 h-4" />ซื้อเลย
+              {isFree ? (
+                <Button
+                  className="gap-2 font-semibold shadow-lg shadow-emerald-500/30 bg-emerald-500 hover:bg-emerald-600 text-white"
+                  onClick={handleClaimFreeModal}
+                  disabled={isOutOfStock}
+                >
+                  <Gift className="w-4 h-4" />
+                  {isOutOfStock ? 'หมดสต็อก' : 'รับฟรี!'}
                 </Button>
-              </Link>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    className={`gap-2 font-semibold transition-all ${isAdding ? 'bg-emerald-500 border-emerald-500 text-white' : ''}`}
+                    onClick={handleAddToCart}
+                    disabled={isAdding || isOutOfStock}
+                  >
+                    {isAdding ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+                    {isAdding ? 'เพิ่มแล้ว' : isOutOfStock ? 'หมดสต็อก' : 'เพิ่มตะกร้า'}
+                  </Button>
+                  <Link href={`/checkout?product=${encodeURIComponent(product.id)}`}>
+                    <Button className="gap-2 font-semibold shadow-lg shadow-primary/30" disabled={isOutOfStock}>
+                      <Zap className="w-4 h-4" />ซื้อเลย
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
