@@ -40,6 +40,7 @@ interface StoreContextType {
   orders: Order[]
   createOrder: (orderData: Omit<Order, 'id' | 'order_code' | 'created_at' | 'updated_at'>) => Order
   updateOrder: (orderId: string, updates: Partial<Order>) => void
+  deleteOrder: (orderId: string) => void
   
   // Members
   members: Member[]
@@ -474,6 +475,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     scheduleServerSync()
   }, [scheduleServerSync])
 
+  const deleteOrder = useCallback((orderId: string) => {
+    setOrders(prev => {
+      const updated = prev.filter(o => o.id !== orderId)
+      write(STORAGE_KEYS.orders, updated)
+      return updated
+    })
+    scheduleServerSync()
+  }, [scheduleServerSync])
+
   // Members
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     const normalizedUsername = normalizeUsername(username)
@@ -753,6 +763,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       orders,
       createOrder,
       updateOrder,
+      deleteOrder,
       members,
       currentMember,
       login,

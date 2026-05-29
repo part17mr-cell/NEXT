@@ -295,7 +295,7 @@ function SlipModal({ src, onClose }: { src: string; onClose: () => void }) {
 
 // Orders Tab with full management
 function OrdersTab() {
-  const { orders, updateOrder, formatMoney, getProductById, refreshFromServer } = useStore()
+  const { orders, updateOrder, deleteOrder, formatMoney, getProductById, refreshFromServer } = useStore()
   const [filter, setFilter] = useState('all')
   const [refreshing, setRefreshing] = useState(false)
   const [search, setSearch] = useState('')
@@ -687,6 +687,23 @@ function OrdersTab() {
                     ) : (
                       <p className="text-xs text-muted-foreground mt-1">{order.admin_note || 'ยังไม่มีโน้ต'}</p>
                     )}
+                  </div>
+
+                  {/* Danger zone: delete order */}
+                  <div className="flex justify-end pt-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 text-xs h-7"
+                      onClick={() => {
+                        if (confirm(`ลบออเดอร์ #${order.order_code} ถาวร?`)) {
+                          deleteOrder(order.id)
+                          toast.success('ลบออเดอร์แล้ว')
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-3 h-3" /> ลบออเดอร์
+                    </Button>
                   </div>
                 </div>
               )}
@@ -1089,10 +1106,13 @@ function ProductForm({
 
 // Members Tab
 function MembersTab() {
-  const { members, updateMembers, orders, activeProducts, createOrder, formatMoney } = useStore()
+  const { members, updateMembers, orders, updateOrder, deleteOrder, activeProducts, createOrder, formatMoney } = useStore()
   const [search, setSearch] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [activePanel, setActivePanel] = useState<'edit' | 'give' | 'orders' | null>(null)
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null)
+  const [editOrderStatus, setEditOrderStatus] = useState<Order['status']>('pending')
+  const [editOrderLink, setEditOrderLink] = useState('')
   const [editForm, setEditForm] = useState({
     username: '', display_name: '', role: 'member' as 'member' | 'admin',
     rank: '', note: '', password: '',
@@ -1345,15 +1365,89 @@ function MembersTab() {
               {isExpanded && activePanel === 'orders' && (
                 <div className="px-4 pb-4 border-t border-border/50 pt-3 space-y-2">
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">ประวัติออเดอร์ ({memberOrders.length})</p>
-                  {memberOrders.length > 0 ? memberOrders.slice(0, 10).map(o => (
-                    <div key={o.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-background/50 text-sm">
-                      <div>
-                        <p className="font-medium">#{o.order_code}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString('th-TH')} · {o.status}{o.source === 'admin_gift' ? ' · 🎁 Gift' : ''}</p>
+                  {memberOrders.length > 0 ? memberOrders.map(o => {
+                    const isEditingThis = editingOrderId === o.id
+                    const statusColors: Record<string, string> = {
+                      pending: 'text-yellow-500', paid: 'text-blue-500',
+                      processing: 'text-purple-500', delivered: 'text-emerald-500', cancelled: 'text-muted-foreground'
+                    }
+                    const statusTH: Record<string, string> = {
+                      pending: 'รอตรวจสลิป', paid: 'ชำระแล้ว',
+                      processing: 'กำลังจัดส่ง', delivered: 'ส่งแล้ว', cancelled: 'ยกเลิก'
+                    }
+                    return (
+                      <div key={o.id} className="rounded-xl border border-border bg-background/50 overflow-hidden">
+                        {/* Row */}
+                        <div className="flex items-center justify-between px-3 py-2.5 text-sm gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-mono font-bold text-xs">#{o.order_code}</p>
+                            <p className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString('th-TH')} · <span className={statusColors[o.status]}>{statusTH[o.status]}</span>{o.source === 'admin_gift' ? ' · 🎁' : o.source === 'free_claim' ? ' · 🆓' : ''}</p>
+                          </div>
+                          <p className="font-bold text-primary text-xs shrink-0">{o.total_amount > 0 ? formatMoney(o.total_amount) : 'ฟรี'}</p>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => {
+                                if (isEditingThis) { setEditingOrderId(null); return }
+                                setEditingOrderId(o.id)
+                                setEditOrderStatus(o.status)
+                                setEditOrderLink(o.delivery_link || '')
+                              }}
+                              className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${isEditingThis ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground hover:text-foreground'}`}
+                              title="แก้ไข"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm(`ลบออเดอร์ #${o.order_code}?`)) {
+                                  deleteOrder(o.id)
+                                  toast.success('ลบออเดอร์แล้ว')
+                                }
+                              }}
+                              className="w-6 h-6 rounded flex items-center justify-center hover:bg-destructive/10 text-destructive transition-colors"
+                              title="ลบ"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                        {/* Inline edit */}
+                        {isEditingThis && (
+                          <div className="px-3 pb-3 pt-1 border-t border-border/40 space-y-2 bg-primary/[0.02]">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="space-y-1">
+                                <p className="text-[10px] text-muted-foreground font-medium">สถานะ</p>
+                                <Select value={editOrderStatus} onValueChange={v => setEditOrderStatus(v as Order['status'])}>
+                                  <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">รอตรวจสลิป</SelectItem>
+                                    <SelectItem value="paid">ชำระแล้ว</SelectItem>
+                                    <SelectItem value="processing">กำลังจัดส่ง</SelectItem>
+                                    <SelectItem value="delivered">ส่งแล้ว</SelectItem>
+                                    <SelectItem value="cancelled">ยกเลิก</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-[10px] text-muted-foreground font-medium">ลิงก์สินค้า</p>
+                                <Input value={editOrderLink} onChange={e => setEditOrderLink(e.target.value)} placeholder="https://..." className="h-7 text-xs" />
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button size="sm" className="h-7 text-xs gap-1 flex-1" onClick={() => {
+                                updateOrder(o.id, { status: editOrderStatus, delivery_link: editOrderLink })
+                                setEditingOrderId(null)
+                                toast.success('อัปเดตออเดอร์แล้ว')
+                              }}>
+                                <Check className="w-3 h-3" /> บันทึก
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingOrderId(null)}>ยกเลิก</Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <p className="font-bold text-primary">{o.total_amount > 0 ? formatMoney(o.total_amount) : 'ฟรี'}</p>
-                    </div>
-                  )) : (
+                    )
+                  }) : (
                     <p className="text-sm text-muted-foreground text-center py-4">ยังไม่มีออเดอร์</p>
                   )}
                 </div>
