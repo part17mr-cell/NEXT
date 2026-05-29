@@ -19,6 +19,7 @@ function CheckoutContent() {
   const {
     settings,
     cart,
+    orders,
     getProductById,
     currentMember,
     createOrder,
@@ -106,6 +107,22 @@ function CheckoutContent() {
     if (!form.slip) {
       toast.error('กรุณาแนบสลิป')
       return
+    }
+
+    // Block re-purchase: 1 product per person
+    if (currentMember) {
+      const alreadyOwned = items.filter(item =>
+        orders.some(o =>
+          o.status !== 'cancelled' &&
+          (o.member_id === currentMember.id || o.customer_username === currentMember.username) &&
+          o.items.some(i => i.id === item.id)
+        )
+      )
+      if (alreadyOwned.length > 0) {
+        toast.error(`คุณมีสินค้าเหล่านี้อยู่แล้ว: ${alreadyOwned.map(i => i.name).join(', ')}`)
+        setLoading(false)
+        return
+      }
     }
     
     setLoading(true)

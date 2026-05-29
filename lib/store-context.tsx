@@ -374,6 +374,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       toast.error('ไม่พบสินค้า')
       return
     }
+
+    // Block adding already-owned products to cart
+    const memberId = currentMember?.id
+    const memberUsername = currentMember?.username
+    if (memberId || memberUsername) {
+      const alreadyOwned = orders.some(o =>
+        o.status !== 'cancelled' &&
+        (o.member_id === memberId || o.customer_username === memberUsername) &&
+        o.items.some(i => i.id === productId)
+      )
+      if (alreadyOwned) {
+        toast.error('คุณมีสินค้านี้อยู่แล้ว')
+        return
+      }
+    }
     
     setCart(prev => {
       const existing = prev.find(item => item.id === productId)

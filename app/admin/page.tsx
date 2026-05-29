@@ -2253,29 +2253,41 @@ function SettingsTab() {
 
         {/* Security Settings */}
         {activeSection === 'security' && (
-          <div className="p-6 rounded-2xl border border-border bg-card/50">
-            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+          <div className="p-6 rounded-2xl border border-border bg-card/50 space-y-4">
+            <h3 className="font-bold text-lg flex items-center gap-2">
               <Shield className="w-5 h-5 text-primary" />
               ความปลอดภัย
             </h3>
+            {(form.security.adminPassword === 'index999+' || settings.security.adminPassword === 'index999+') && (
+              <div className="flex items-start gap-3 p-4 rounded-xl border border-red-500/40 bg-red-500/10">
+                <Shield className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-red-400 text-sm">⚠️ คุณยังใช้ Password เริ่มต้น!</p>
+                  <p className="text-xs text-red-300/80 mt-1">
+                    Password <span className="font-mono bg-red-500/20 px-1 rounded">index999+</span> เป็น Default Password ที่ทุกคนรู้ได้
+                    — <strong>เปลี่ยนเดี๋ยวนี้</strong> เพื่อป้องกันคนอื่นเข้าถึงแผงแอดมิน
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Admin Username</Label>
-                <Input 
+                <Input
                   value={form.security.adminUsername}
                   onChange={e => setForm(prev => ({ ...prev, security: { ...prev.security, adminUsername: e.target.value } }))}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Admin Password</Label>
-                <Input 
+                <Input
                   type="password"
                   value={form.security.adminPassword}
                   onChange={e => setForm(prev => ({ ...prev, security: { ...prev.security, adminPassword: e.target.value } }))}
                 />
               </div>
             </div>
-            <p className="text-sm text-muted-foreground mt-4">
+            <p className="text-sm text-muted-foreground">
               เปลี่ยน Username/Password แล้วต้อง Logout และ Login ใหม่
             </p>
           </div>

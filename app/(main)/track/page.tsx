@@ -22,7 +22,7 @@ function TrackContent() {
   const searchParams = useSearchParams()
   const initialCode = searchParams.get('code') || ''
 
-  const { orders, formatMoney, isLoaded, getProductById } = useStore()
+  const { orders, formatMoney, isLoaded, getProductById, currentMember } = useStore()
   const [query, setQuery] = useState(initialCode)
   const [results, setResults] = useState<Order[]>([])
   const [searched, setSearched] = useState(false)
@@ -37,11 +37,9 @@ function TrackContent() {
 
     localStorage.setItem(LAST_ORDER_KEY, term)
 
+    // Only search by order_code to prevent leaking other users' orders
     const found = orders.filter(o =>
-      [o.order_code, o.customer_username, o.phone, o.line_id]
-        .join(' ')
-        .toLowerCase()
-        .includes(term.toLowerCase())
+      o.order_code.toLowerCase().includes(term.toLowerCase())
     )
 
     setResults(found)
