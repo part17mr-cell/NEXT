@@ -119,6 +119,12 @@ export function ProductCard({ product }: ProductCardProps) {
   const soldCount = getProductSoldCount(product.id, stableHash, product.sold)
   const stableRating = getProductRating(product.id, stableHash, product.rating).toFixed(1)
 
+  const alreadyOwned = useMemo(() => currentMember !== null && orders.some(o =>
+    o.status !== 'cancelled' &&
+    (o.member_id === currentMember!.id || o.customer_username === currentMember!.username) &&
+    o.items.some(i => i.id === product.id)
+  ), [currentMember, orders, product.id])
+
   const handleOpenDetail = () => {
     setShowDetail(true)
     openModal()
@@ -265,10 +271,14 @@ export function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
           
-          {/* Quick buy / free button — hidden when out of stock */}
+          {/* Quick buy / free / owned button — hidden when out of stock */}
           {!isOutOfStock && (
             <div className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-10">
-              {isFree ? (
+              {alreadyOwned ? (
+                <Button size="icon" onClick={e => { e.stopPropagation(); handleOpenDetail() }} className="h-9 w-9 rounded-xl shadow-lg bg-white/90 text-foreground hover:bg-white">
+                  <Eye className="w-4 h-4" />
+                </Button>
+              ) : isFree ? (
                 <Button size="icon" onClick={e => handleClaimFree(e)} className="h-9 w-9 rounded-xl shadow-lg bg-emerald-500 text-white hover:bg-emerald-600">
                   <Gift className="w-4 h-4" />
                 </Button>
@@ -379,35 +389,48 @@ export function ProductCard({ product }: ProductCardProps) {
               </div>
             )}
 
-            {/* Buttons — cart icon + buy / free */}
+            {/* Buttons — cart icon + buy / free / owned */}
             <div className="flex gap-2 mt-auto pt-1">
-              {!isFree && (
+              {alreadyOwned ? (
                 <Button
                   variant="outline"
-                  size="icon"
-                  className={`h-10 w-10 rounded-xl shrink-0 transition-all ${isAdding ? 'border-emerald-500 text-emerald-500' : 'border-primary/30 hover:bg-primary/10'}`}
-                  onClick={handleAddToCart}
-                  disabled={isAdding || isOutOfStock}
+                  className="w-full h-10 font-bold gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+                  onClick={e => { e.stopPropagation(); handleOpenDetail() }}
                 >
-                  {isAdding ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
-                </Button>
-              )}
-              {isFree ? (
-                <Button
-                  className="w-full h-10 font-bold shadow-lg shadow-emerald-500/30 gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white"
-                  onClick={e => handleClaimFree(e)}
-                  disabled={isOutOfStock}
-                >
-                  <Gift className="w-4 h-4" />
-                  {isOutOfStock ? 'หมดสต็อก' : 'รับฟรี!'}
+                  <Eye className="w-4 h-4" />
+                  ดูสินค้า
                 </Button>
               ) : (
-                <Link href={`/checkout?product=${encodeURIComponent(product.id)}`} className="flex-1">
-                  <Button className="w-full h-10 font-bold shadow-lg shadow-primary/25 gap-1.5" disabled={isOutOfStock}>
-                    <Zap className="w-4 h-4" />
-                    {isOutOfStock ? 'หมดสต็อก' : 'ซื้อเลย'}
-                  </Button>
-                </Link>
+                <>
+                  {!isFree && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className={`h-10 w-10 rounded-xl shrink-0 transition-all ${isAdding ? 'border-emerald-500 text-emerald-500' : 'border-primary/30 hover:bg-primary/10'}`}
+                      onClick={handleAddToCart}
+                      disabled={isAdding || isOutOfStock}
+                    >
+                      {isAdding ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+                    </Button>
+                  )}
+                  {isFree ? (
+                    <Button
+                      className="w-full h-10 font-bold shadow-lg shadow-emerald-500/30 gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white"
+                      onClick={e => handleClaimFree(e)}
+                      disabled={isOutOfStock}
+                    >
+                      <Gift className="w-4 h-4" />
+                      {isOutOfStock ? 'หมดสต็อก' : 'รับฟรี!'}
+                    </Button>
+                  ) : (
+                    <Link href={`/checkout?product=${encodeURIComponent(product.id)}`} className="flex-1">
+                      <Button className="w-full h-10 font-bold shadow-lg shadow-primary/25 gap-1.5" disabled={isOutOfStock}>
+                        <Zap className="w-4 h-4" />
+                        {isOutOfStock ? 'หมดสต็อก' : 'ซื้อเลย'}
+                      </Button>
+                    </Link>
+                  )}
+                </>
               )}
             </div>
 
@@ -496,8 +519,17 @@ export function ProductCard({ product }: ProductCardProps) {
               <span className="text-[9px] text-muted-foreground/50">{viewsDisplay.toLocaleString()} ยอดดู</span>
             </div>
 
-            {/* Add to Cart / Free Claim */}
-            {isFree ? (
+            {/* Add to Cart / Free Claim / Already Owned */}
+            {alreadyOwned ? (
+              <Button
+                variant="outline"
+                className="w-full gap-2 font-semibold h-10 border-primary/30 text-primary hover:bg-primary/10"
+                onClick={handleOpenDetail}
+              >
+                <Eye className="w-4 h-4" />
+                ดูสินค้า
+              </Button>
+            ) : isFree ? (
               <Button
                 className="w-full gap-2 font-semibold h-10 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30"
                 onClick={handleClaimFree}
@@ -636,6 +668,21 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
     for (const c of product.id) h = (h * 31 + c.charCodeAt(0)) & 0xffff
     return h
   }, [product.id])
+
+  const alreadyOwned = useMemo(() => currentMember !== null && orders.some(o =>
+    o.status !== 'cancelled' &&
+    (o.member_id === currentMember!.id || o.customer_username === currentMember!.username) &&
+    o.items.some(i => i.id === product.id)
+  ), [currentMember, orders, product.id])
+
+  const myDeliveryLink = useMemo(() => {
+    if (!currentMember) return undefined
+    return orders.find(o =>
+      o.status !== 'cancelled' &&
+      (o.member_id === currentMember.id || o.customer_username === currentMember.username) &&
+      o.items.some(i => i.id === product.id)
+    )?.delivery_link
+  }, [currentMember, orders, product.id])
 
   const productReviews = getProductReviews(product.id)
   const viewsDisplay = getProductViewCount(product.id, modalHash, product.views)
@@ -921,7 +968,24 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
               )}
             </div>
             <div className="flex gap-2">
-              {isFree ? (
+              {alreadyOwned ? (
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-bold">
+                    <Check className="w-4 h-4" />
+                    คุณมีสินค้านี้แล้ว
+                  </div>
+                  {(myDeliveryLink || product.download_url) && (
+                    <Button
+                      variant="outline"
+                      className="gap-2 font-semibold border-primary/30"
+                      onClick={() => window.open(myDeliveryLink || product.download_url, '_blank', 'noopener')}
+                    >
+                      <Eye className="w-4 h-4" />
+                      เปิดลิงก์สินค้า
+                    </Button>
+                  )}
+                </div>
+              ) : isFree ? (
                 <Button
                   className="gap-2 font-semibold shadow-lg shadow-emerald-500/30 bg-emerald-500 hover:bg-emerald-600 text-white"
                   onClick={handleClaimFreeModal}
