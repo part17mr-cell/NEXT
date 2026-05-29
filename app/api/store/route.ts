@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server'
 import { Redis } from '@upstash/redis'
 
-// Upstash Redis — requires env vars:
-//   UPSTASH_REDIS_REST_URL
-//   UPSTASH_REDIS_REST_TOKEN
 const redis = Redis.fromEnv()
 const STORE_KEY = 'nextthon:store'
 
@@ -11,14 +8,23 @@ export async function GET() {
   try {
     const data = await redis.get(STORE_KEY)
     return NextResponse.json(data ?? {}, {
-      headers: { 'Cache-Control': 'no-store' },
+      headers: {
+        'Cache-Control': 's-maxage=20, stale-while-revalidate=30',
+      },
     })
   } catch {
-    return NextResponse.json({}, { headers: { 'Cache-Control': 'no-store' } })
+    return NextResponse.json({}, {
+      headers: { 'Cache-Control': 's-maxage=20, stale-while-revalidate=30' },
+    })
   }
 }
 
 export async function POST(request: Request) {
+  const token = request.headers.get('x-store-token')
+  const secret = process.env.STORE_API_SECRET
+  if (!secret || token !== secret) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
     const body = await request.json()
     await redis.set(STORE_KEY, body)

@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo, type ReactNode } from 'react'
 import {
   type Product,
   type CartItem,
@@ -229,7 +229,10 @@ async function fetchFromServer(): Promise<ServerPayload> {
 function pushToServer(payload: ServerPayload) {
   fetch('/api/store', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-store-token': process.env.NEXT_PUBLIC_STORE_API_SECRET ?? '',
+    },
     body: JSON.stringify(payload),
   }).catch(() => {})
 }
@@ -329,8 +332,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [scheduleServerSync])
 
   // Products
-  const activeProducts = products.filter(p => p.is_active !== false).sort((a, b) => (a.sort_order || 99) - (b.sort_order || 99))
-  const categories = [...new Set(activeProducts.map(p => p.category).filter(Boolean))]
+  const activeProducts = useMemo(
+    () => products.filter(p => p.is_active !== false).sort((a, b) => (a.sort_order || 99) - (b.sort_order || 99)),
+    [products]
+  )
+  const categories = useMemo(
+    () => [...new Set(activeProducts.map((p: Product) => p.category).filter(Boolean))],
+    [activeProducts]
+  )
 
   const getProductById = useCallback((id: string) => {
     return products.find(p => p.id === id)
@@ -543,34 +552,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const adminLogin = useCallback((username: string, password: string): boolean => {
     const normalizedInput = normalizeUsername(username)
     const storedUsername = normalizeUsername(settings.security.adminUsername)
-    const defaultUsername = normalizeUsername(defaultSettings.security.adminUsername)
-    
-    // Check username first
-    const usernameMatchesStored = normalizedInput === storedUsername
-    const usernameMatchesDefault = normalizedInput === defaultUsername
-    
-    if (!usernameMatchesStored && !usernameMatchesDefault) {
+
+    if (normalizedInput !== storedUsername) {
       toast.error('ไม่พบ Username แอดมินนี้')
       return false
     }
-    
-    // Check password
-    const passwordMatchesStored = usernameMatchesStored && password === settings.security.adminPassword
-    const passwordMatchesDefault = usernameMatchesDefault && password === defaultSettings.security.adminPassword
-    
-    if (passwordMatchesStored || passwordMatchesDefault) {
-      // Clear member session when switching to admin
-      setCurrentMember(null)
-      sessionStorage.removeItem(STORAGE_KEYS.member)
-      localStorage.removeItem(STORAGE_KEYS.member)
-      setIsAdmin(true)
-      sessionStorage.setItem(STORAGE_KEYS.admin, 'ok')
-      toast.success('เข้าสู่ระบบแอดมินสำเร็จ')
-      return true
+
+    if (password !== settings.security.adminPassword) {
+      toast.error('Password ไม่ถูกต้อง กรุณาลองใหม่')
+      return false
     }
-    
-    toast.error('Password ไม่ถูกต้อง กรุณาลองใหม่')
-    return false
+
+    setCurrentMember(null)
+    sessionStorage.removeItem(STORAGE_KEYS.member)
+    localStorage.removeItem(STORAGE_KEYS.member)
+    setIsAdmin(true)
+    sessionStorage.setItem(STORAGE_KEYS.admin, 'ok')
+    toast.success('เข้าสู่ระบบแอดมินสำเร็จ')
+    return true
   }, [settings.security.adminUsername, settings.security.adminPassword])
 
   const adminLogout = useCallback(() => {
@@ -688,7 +687,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const incrementProductViews = useCallback((productId: string, stableHash: number) => {
     setViewCounts(prev => {
-      // Use same formula as getProductViewCount for consistent initial value
       const rawViews = 3 + (stableHash % 13)
       const initial = rawViews * 287 + 1000
       const current = prev[productId] ?? initial
@@ -696,8 +694,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       write(STORAGE_KEYS.views, updated)
       return updated
     })
-    scheduleServerSync()
-  }, [scheduleServerSync])
+    // ไม่ sync ทุกครั้งที่ดูสินค้า — ลด Redis write ไม่จำเป็น
+  }, [])
 
   // Manual refresh from server (used by admin refresh button)
   const refreshFromServer = useCallback(async () => {

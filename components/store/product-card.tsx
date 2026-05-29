@@ -89,7 +89,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addToCart, formatMoney, isAdmin, products, updateProducts, openModal, closeModal, getProductRating, getProductSoldCount, getProductViewCount, incrementProductViews, currentMember, createOrder } = useStore()
+  const { addToCart, formatMoney, isAdmin, products, updateProducts, openModal, closeModal, getProductRating, getProductSoldCount, getProductViewCount, incrementProductViews, currentMember, createOrder, orders } = useStore()
   const router = useRouter()
   const [showDetail, setShowDetail] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
@@ -139,6 +139,19 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleClaimFree = (e?: React.MouseEvent) => {
     e?.stopPropagation()
     if (!currentMember) { router.push('/login'); return }
+
+    const alreadyClaimed = orders.some(o =>
+      o.source === 'free_claim' &&
+      o.status !== 'cancelled' &&
+      (o.member_id === currentMember.id || o.customer_username === currentMember.username) &&
+      o.items.some(i => i.id === product.id)
+    )
+    if (alreadyClaimed) {
+      toast.info('คุณรับสินค้านี้ไปแล้ว')
+      if (product.download_url) window.open(product.download_url, '_blank', 'noopener')
+      return
+    }
+
     createOrder({
       status: 'delivered',
       customer_name: currentMember.display_name || currentMember.username,
@@ -151,7 +164,12 @@ export function ProductCard({ product }: ProductCardProps) {
       delivery_link: product.download_url || '',
       admin_note: '', promo_code: '', discount_amount: 0,
     })
-    toast.success(product.download_url ? 'รับสินค้าแล้ว! ดูลิงก์ได้ที่บัญชีของฉัน' : 'รับสินค้าแล้ว! แอดมินจะส่งให้เร็วๆ นี้')
+    if (product.download_url) {
+      window.open(product.download_url, '_blank', 'noopener')
+      toast.success('รับสินค้าแล้ว! เปิดลิงก์ให้แล้ว')
+    } else {
+      toast.success('รับสินค้าแล้ว! แอดมินจะส่งสินค้าให้เร็วๆ นี้')
+    }
   }
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -551,7 +569,7 @@ interface ProductDetailModalProps {
 }
 
 function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps) {
-  const { addToCart, formatMoney, isAdmin, products, updateProducts, currentMember, createOrder, addReview, deleteReview, updateReview, getProductReviews, getProductRating, getProductSoldCount, getProductViewCount } = useStore()
+  const { addToCart, formatMoney, isAdmin, products, updateProducts, currentMember, createOrder, orders, addReview, deleteReview, updateReview, getProductReviews, getProductRating, getProductSoldCount, getProductViewCount } = useStore()
   const router = useRouter()
   const [isAdding, setIsAdding] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
@@ -578,6 +596,20 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
 
   const handleClaimFreeModal = () => {
     if (!currentMember) { router.push('/login'); return }
+
+    const alreadyClaimed = orders.some(o =>
+      o.source === 'free_claim' &&
+      o.status !== 'cancelled' &&
+      (o.member_id === currentMember.id || o.customer_username === currentMember.username) &&
+      o.items.some(i => i.id === product.id)
+    )
+    if (alreadyClaimed) {
+      toast.info('คุณรับสินค้านี้ไปแล้ว')
+      if (product.download_url) window.open(product.download_url, '_blank', 'noopener')
+      onClose()
+      return
+    }
+
     createOrder({
       status: 'delivered',
       customer_name: currentMember.display_name || currentMember.username,
@@ -590,7 +622,12 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
       delivery_link: product.download_url || '',
       admin_note: '', promo_code: '', discount_amount: 0,
     })
-    toast.success(product.download_url ? 'รับสินค้าแล้ว! ดูลิงก์ได้ที่บัญชีของฉัน' : 'รับสินค้าแล้ว! แอดมินจะส่งให้เร็วๆ นี้')
+    if (product.download_url) {
+      window.open(product.download_url, '_blank', 'noopener')
+      toast.success('รับสินค้าแล้ว! เปิดลิงก์ให้แล้ว')
+    } else {
+      toast.success('รับสินค้าแล้ว! แอดมินจะส่งสินค้าให้เร็วๆ นี้')
+    }
     onClose()
   }
 
