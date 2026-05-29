@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Home, ShoppingBag, Headset, UserPlus, LogIn, User, LogOut, Settings, Sparkles } from 'lucide-react'
+import { Menu, X, Home, ShoppingBag, Headset, UserPlus, LogIn, User, LogOut, Settings } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -61,10 +61,7 @@ export function Navbar() {
               {settings.brand.logoUrl ? (
                 <img src={settings.brand.logoUrl} alt={settings.brand.storeName} className="w-full h-full object-contain" />
               ) : (
-                <>
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent" />
-                </>
+                <span className="text-2xl font-black bg-gradient-to-br from-primary via-violet-400 to-blue-400 bg-clip-text text-transparent leading-none select-none">N</span>
               )}
             </motion.div>
             <div className="hidden sm:block">
@@ -195,7 +192,7 @@ export function Navbar() {
                       {settings.brand.logoUrl ? (
                         <img src={settings.brand.logoUrl} alt={settings.brand.storeName} className="w-full h-full object-contain" />
                       ) : (
-                        <Sparkles className="w-5 h-5 text-primary" />
+                        <span className="text-2xl font-black bg-gradient-to-br from-primary via-violet-400 to-blue-400 bg-clip-text text-transparent leading-none select-none">N</span>
                       )}
                     </div>
                     <div>

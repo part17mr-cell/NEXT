@@ -320,6 +320,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(timer)
   }, [isAdmin, isLoaded])
 
+  // Poll every 60s for non-admin visitors to keep hero stats (orders/members) current
+  useEffect(() => {
+    if (isAdmin || !isLoaded) return
+    const poll = async () => {
+      const sv = await fetchFromServer()
+      if (sv.orders)  setOrders(sv.orders)
+      if (sv.members) setMembers(sv.members)
+    }
+    const timer = setInterval(poll, 60000)
+    return () => clearInterval(timer)
+  }, [isAdmin, isLoaded])
+
   // Settings
   const updateSettings = useCallback((newSettings: Partial<StoreSettings>) => {
     setSettings(prev => {
