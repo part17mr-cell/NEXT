@@ -120,10 +120,22 @@ function TrackContent() {
                 : order.delivery_link
                   ? [order.delivery_link]
                   : order.items.map(i => getProductById(i.id)?.download_url || '').filter(Boolean)
-            const deliveryLinks = rawLinks.map((link, i) => ({
-              name: order.items[i]?.name || order.items.map(x => x.name).join(', '),
-              link,
-            }))
+            // Name each link: if single link → product name, if multiple → number them
+            const deliveryLinks = rawLinks.map((link, i) => {
+              const total = rawLinks.length
+              const productName = order.items[i]?.name || order.items[0]?.name || 'สินค้า'
+              let name: string
+              if (total === 1) {
+                name = productName
+              } else if (order.items.length >= total) {
+                // Each link maps to a different product
+                name = order.items[i]?.name || `ไฟล์ที่ ${i + 1}`
+              } else {
+                // Multiple links for same product — number them
+                name = `📎 ไฟล์ ${i + 1} / ${total}`
+              }
+              return { name, link }
+            })
             
             return (
               <div 
