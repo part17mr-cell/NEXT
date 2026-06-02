@@ -714,9 +714,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [reviews])
 
   const getProductSoldCount = useCallback((productId: string, stableHash: number, override?: number): number => {
-    if (override !== undefined && override > 0) return override
-    const count = orders.filter(o => o.status === 'delivered' && o.items.some(i => i.id === productId)).length
-    return count > 0 ? count : 51 + (stableHash % 200)
+    const realCount = orders.filter(o => o.status === 'delivered' && o.items.some(i => i.id === productId)).length
+    // override = base ที่ admin ล็อคไว้ → แสดง override + real purchases
+    if (override !== undefined && override > 0) return override + realCount
+    // ไม่มี override → ถ้ามียอดจริงให้ใช้, ถ้าไม่มีใช้ค่าสุ่มจาก hash
+    return realCount > 0 ? realCount : 51 + (stableHash % 200)
   }, [orders])
 
   const getProductViewCount = useCallback((productId: string, stableHash: number, override?: number): number => {

@@ -33,6 +33,20 @@ function useCountdown(endTime: string | undefined) {
   const [remaining, setRemaining] = useState<number | null>(null)
   useEffect(() => {
     if (!endTime) { setRemaining(null); return }
+    // 'always' = เปิดตลอด ไม่มี countdown
+    if (endTime === 'always') { setRemaining(Infinity); return }
+    // 'daily' = รีเซ็ตทุก midnight
+    if (endTime === 'daily') {
+      const calc = () => {
+        const now = new Date()
+        const midnight = new Date(now)
+        midnight.setHours(23, 59, 59, 999)
+        setRemaining(midnight.getTime() - now.getTime())
+      }
+      calc()
+      const id = setInterval(calc, 1000)
+      return () => clearInterval(id)
+    }
     const calc = () => {
       const diff = new Date(endTime).getTime() - Date.now()
       setRemaining(diff > 0 ? diff : 0)
@@ -45,11 +59,19 @@ function useCountdown(endTime: string | undefined) {
 }
 
 function FlashTimer({ ms, size = 'sm', showLabels = true }: { ms: number; size?: 'sm' | 'md'; showLabels?: boolean }) {
+  const isSmall = size === 'sm'
+  // 'always' mode — แสดง ∞ แทน countdown
+  if (!isFinite(ms)) {
+    return (
+      <span className={`${isSmall ? 'text-xs' : 'text-sm'} bg-black/30 text-white font-black rounded px-2 py-0.5 font-mono`}>
+        24/7
+      </span>
+    )
+  }
   const s = Math.floor(ms / 1000)
   const h = Math.floor(s / 3600)
   const m = Math.floor((s % 3600) / 60)
   const sec = s % 60
-  const isSmall = size === 'sm'
   const parts = [
     { val: h, label: 'ชม.' },
     { val: m, label: 'นาที' },
@@ -106,7 +128,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const CatIcon = catStyle.Icon
 
   const remaining = useCountdown(product.flash_sale_end)
-  const isFlashSale = remaining !== null && remaining > 0
+  const isFlashSale = remaining !== null && (remaining === Infinity || remaining > 0)
   const isLowStock = product.stock_qty !== null && product.stock_qty !== undefined && product.stock_qty > 0 && product.stock_qty <= 10
   const isOutOfStock = product.stock_qty !== null && product.stock_qty !== undefined && product.stock_qty === 0
 
@@ -624,7 +646,7 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
   const catStyle = categoryStyles[product.category] || defaultStyle
   const CatIcon = catStyle.Icon
   const remaining = useCountdown(product.flash_sale_end)
-  const isFlashSale = remaining !== null && remaining > 0
+  const isFlashSale = remaining !== null && (remaining === Infinity || remaining > 0)
   const isLowStock = product.stock_qty !== null && product.stock_qty !== undefined && product.stock_qty > 0 && product.stock_qty <= 10
   const isOutOfStock = product.stock_qty !== null && product.stock_qty !== undefined && product.stock_qty === 0
 
@@ -1199,20 +1221,28 @@ function AdminProductEdit({
           {/* Flash Sale */}
           <div className="space-y-1.5 p-3 rounded-xl bg-red-500/5 border border-red-500/20">
             <Label className="text-sm font-semibold text-red-400 flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5" /> Flash Sale (นับถอยหลัง)
+              <Zap className="w-3.5 h-3.5" /> Flash Sale
             </Label>
+            {/* Special modes */}
+            <div className="flex gap-1.5 flex-wrap mb-1">
+              <button type="button"
+                onClick={() => set('flash_sale_end', 'always')}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${form.flash_sale_end === 'always' ? 'bg-red-500 text-white border-red-500' : 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500 hover:text-white'}`}>
+                ♾ 24/7 ตลอดเวลา
+              </button>
+              <button type="button"
+                onClick={() => set('flash_sale_end', 'daily')}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${form.flash_sale_end === 'daily' ? 'bg-orange-500 text-white border-orange-500' : 'bg-orange-500/10 text-orange-400 border-orange-500/30 hover:bg-orange-500 hover:text-white'}`}>
+                🔄 รีเซ็ตทุกวัน
+              </button>
+            </div>
+            {/* Time presets */}
             <div className="flex gap-1.5 flex-wrap mb-1.5">
-              {[
-                { label: '1 ชม.', h: 1 },
-                { label: '3 ชม.', h: 3 },
-                { label: '6 ชม.', h: 6 },
-                { label: '12 ชม.', h: 12 },
-                { label: '24 ชม.', h: 24 },
-              ].map(({ label, h }) => (
+              {[{ label: '1ชม.', h: 1 }, { label: '3ชม.', h: 3 }, { label: '6ชม.', h: 6 }, { label: '12ชม.', h: 12 }, { label: '24ชม.', h: 24 }].map(({ label, h }) => (
                 <button key={h} type="button"
                   onClick={() => set('flash_sale_end', new Date(Date.now() + h * 3600000).toISOString())}
                   className="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500 hover:text-white transition-all">
-                  + {label}
+                  +{label}
                 </button>
               ))}
               <button type="button" onClick={() => set('flash_sale_end', undefined)}
@@ -1220,7 +1250,17 @@ function AdminProductEdit({
                 ปิด
               </button>
             </div>
-            {form.flash_sale_end && new Date(form.flash_sale_end) > new Date() ? (
+            {form.flash_sale_end === 'always' ? (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/10">
+                <Zap className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                <span className="text-xs text-red-400 font-bold">เปิด Flash Sale ตลอด 24/7</span>
+              </div>
+            ) : form.flash_sale_end === 'daily' ? (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-orange-500/10">
+                <Zap className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                <span className="text-xs text-orange-400 font-bold flex-1">รีเซ็ตทุกเที่ยงคืน</span>
+              </div>
+            ) : form.flash_sale_end && new Date(form.flash_sale_end) > new Date() ? (
               <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/10">
                 <Zap className="w-3.5 h-3.5 text-red-400 shrink-0" />
                 <span className="text-xs text-red-400 font-bold flex-1">กำลัง Flash Sale อยู่</span>
@@ -1229,12 +1269,14 @@ function AdminProductEdit({
             ) : (
               <p className="text-[10px] text-muted-foreground">ยังไม่ได้เปิด Flash Sale</p>
             )}
-            <Input
-              type="datetime-local"
-              value={form.flash_sale_end ? form.flash_sale_end.slice(0, 16) : ''}
-              onChange={e => set('flash_sale_end', e.target.value ? new Date(e.target.value).toISOString() : undefined)}
-              className="h-8 text-xs"
-            />
+            {form.flash_sale_end !== 'always' && form.flash_sale_end !== 'daily' && (
+              <Input
+                type="datetime-local"
+                value={form.flash_sale_end ? form.flash_sale_end.slice(0, 16) : ''}
+                onChange={e => set('flash_sale_end', e.target.value ? new Date(e.target.value).toISOString() : undefined)}
+                className="h-8 text-xs"
+              />
+            )}
           </div>
 
           {/* Active toggle */}

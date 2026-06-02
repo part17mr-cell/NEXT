@@ -301,6 +301,7 @@ function OrdersTab() {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'highest'>('newest')
   const [deliveryLinks, setDeliveryLinks] = useState<Record<string, string[]>>({})
+  const [editingDeliveredLinks, setEditingDeliveredLinks] = useState<Set<string>>(new Set())
   const [editNotes, setEditNotes] = useState<Record<string, string>>({})
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
   const [slipModal, setSlipModal] = useState<string | null>(null)
@@ -702,16 +703,84 @@ function OrdersTab() {
                     )
                   })()}
 
-                  {isDelivered && (order.delivery_links?.length || order.delivery_link) && (
-                    <div className="p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 space-y-1.5">
-                      <p className="text-xs font-bold text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> ส่งสินค้าแล้ว</p>
-                      {(order.delivery_links?.length ? order.delivery_links : [order.delivery_link]).filter(Boolean).map((lnk, i) => (
-                        <a key={i} href={lnk} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-emerald-300 hover:text-emerald-200 hover:underline break-all">
-                          <ExternalLink className="w-3 h-3 shrink-0" />{lnk}
-                        </a>
-                      ))}
-                    </div>
-                  )}
+                  {isDelivered && (() => {
+                    const isEditingDelivered = editingDeliveredLinks.has(order.id)
+                    const savedLinks = (order.delivery_links?.length ? order.delivery_links : order.delivery_link ? [order.delivery_link] : []).filter(Boolean)
+                    const editLinks: string[] = deliveryLinks[order.id] ?? (savedLinks.length ? savedLinks : [''])
+                    return (
+                      <div className="p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-bold text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> ส่งสินค้าแล้ว ({savedLinks.length} ลิ้ง)</p>
+                          {!isEditingDelivered ? (
+                            <button
+                              onClick={() => {
+                                setDeliveryLinks(prev => ({ ...prev, [order.id]: savedLinks.length ? savedLinks : [''] }))
+                                setEditingDeliveredLinks(prev => new Set([...prev, order.id]))
+                              }}
+                              className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                            >
+                              <Pencil className="w-3 h-3" /> แก้ไขลิ้ง
+                            </button>
+                          ) : (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  const links = editLinks.filter(Boolean)
+                                  updateOrder(order.id, { delivery_links: links, delivery_link: links[0] || '' })
+                                  setEditingDeliveredLinks(prev => { const s = new Set(prev); s.delete(order.id); return s })
+                                  toast.success('อัปเดตลิ้งแล้ว')
+                                }}
+                                className="text-xs text-emerald-400 hover:text-emerald-300"
+                              >บันทึก</button>
+                              <button
+                                onClick={() => {
+                                  setEditingDeliveredLinks(prev => { const s = new Set(prev); s.delete(order.id); return s })
+                                  setDeliveryLinks(prev => { const n = { ...prev }; delete n[order.id]; return n })
+                                }}
+                                className="text-xs text-muted-foreground hover:text-foreground"
+                              >ยกเลิก</button>
+                            </div>
+                          )}
+                        </div>
+                        {!isEditingDelivered ? (
+                          savedLinks.map((lnk, i) => (
+                            <a key={i} href={lnk} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-emerald-300 hover:text-emerald-200 hover:underline break-all">
+                              <ExternalLink className="w-3 h-3 shrink-0" /><span>{i+1}. {lnk}</span>
+                            </a>
+                          ))
+                        ) : (
+                          <div className="space-y-1.5 pt-1">
+                            {editLinks.map((link, idx) => (
+                              <div key={idx} className="flex gap-1.5 items-center">
+                                <span className="text-[10px] text-emerald-400/60 w-4 text-center shrink-0">{idx+1}</span>
+                                <Input
+                                  value={link}
+                                  onChange={e => {
+                                    const next = [...editLinks]; next[idx] = e.target.value
+                                    setDeliveryLinks(prev => ({ ...prev, [order.id]: next }))
+                                  }}
+                                  placeholder="https://drive.google.com/..."
+                                  className="flex-1 text-xs h-7"
+                                />
+                                {editLinks.length > 1 && (
+                                  <button type="button"
+                                    onClick={() => setDeliveryLinks(prev => ({ ...prev, [order.id]: editLinks.filter((_, i) => i !== idx) }))}
+                                    className="text-muted-foreground hover:text-destructive shrink-0"
+                                  ><X className="w-3.5 h-3.5" /></button>
+                                )}
+                              </div>
+                            ))}
+                            {editLinks.length < 10 && (
+                              <button type="button"
+                                onClick={() => setDeliveryLinks(prev => ({ ...prev, [order.id]: [...editLinks, ''] }))}
+                                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                              ><Plus className="w-3 h-3" /> เพิ่มลิ้ง</button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
 
                   {/* Admin Note */}
                   <div className="p-2.5 rounded-xl border border-border bg-background/50">
@@ -1162,12 +1231,44 @@ function ProductForm({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Flash Sale หมดเวลา (ว่างเปล่า = ปิด)</Label>
-            <Input
-              type="datetime-local"
-              value={form.flash_sale_end ? form.flash_sale_end.slice(0, 16) : ''}
-              onChange={e => setForm(prev => ({ ...prev, flash_sale_end: e.target.value ? new Date(e.target.value).toISOString() : undefined }))}
-            />
+            <Label className="text-xs">Flash Sale</Label>
+            <div className="flex gap-1.5 flex-wrap">
+              <button type="button"
+                onClick={() => setForm(prev => ({ ...prev, flash_sale_end: 'always' }))}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${form.flash_sale_end === 'always' ? 'bg-red-500 text-white border-red-500' : 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500 hover:text-white'}`}>
+                ♾ 24/7
+              </button>
+              <button type="button"
+                onClick={() => setForm(prev => ({ ...prev, flash_sale_end: 'daily' }))}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${form.flash_sale_end === 'daily' ? 'bg-orange-500 text-white border-orange-500' : 'bg-orange-500/10 text-orange-400 border-orange-500/30 hover:bg-orange-500 hover:text-white'}`}>
+                🔄 รีเซ็ตทุกวัน
+              </button>
+              {[1,3,6,12,24].map(h => (
+                <button key={h} type="button"
+                  onClick={() => setForm(prev => ({ ...prev, flash_sale_end: new Date(Date.now() + h * 3600000).toISOString() }))}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500 hover:text-white transition-all">
+                  +{h}ชม.
+                </button>
+              ))}
+              <button type="button"
+                onClick={() => setForm(prev => ({ ...prev, flash_sale_end: undefined }))}
+                className="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-secondary/50 text-muted-foreground border-border/50 hover:bg-destructive hover:text-white transition-all">
+                ปิด
+              </button>
+            </div>
+            {form.flash_sale_end !== 'always' && form.flash_sale_end !== 'daily' && (
+              <Input
+                type="datetime-local"
+                value={form.flash_sale_end ? form.flash_sale_end.slice(0, 16) : ''}
+                onChange={e => setForm(prev => ({ ...prev, flash_sale_end: e.target.value ? new Date(e.target.value).toISOString() : undefined }))}
+                className="h-8 text-xs"
+              />
+            )}
+            {form.flash_sale_end && (
+              <p className="text-[10px] text-emerald-400">
+                {form.flash_sale_end === 'always' ? '✓ เปิดตลอด 24/7' : form.flash_sale_end === 'daily' ? '✓ รีเซ็ตทุกเที่ยงคืน' : `✓ หมดเวลา ${new Date(form.flash_sale_end).toLocaleString('th-TH')}`}
+              </p>
+            )}
           </div>
         </div>
       </div>
