@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, Suspense, useCallback } from 'react'
+import { useState, useEffect, Suspense, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Search, Package, Clock, CheckCircle, XCircle, Truck, Loader2, ExternalLink, Gift, Copy } from 'lucide-react'
+import { Search, Package, Clock, CheckCircle, XCircle, Truck, Loader2, ExternalLink, Gift, Copy, RefreshCw } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,10 +22,12 @@ function TrackContent() {
   const searchParams = useSearchParams()
   const initialCode = searchParams.get('code') || ''
 
-  const { orders, formatMoney, isLoaded, getProductById, currentMember } = useStore()
+  const { orders, formatMoney, isLoaded, getProductById, currentMember, refreshFromServer } = useStore()
   const [query, setQuery] = useState(initialCode)
   const [results, setResults] = useState<Order[]>([])
   const [searched, setSearched] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const fastPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const handleSearch = useCallback((q: string) => {
     const term = q.trim()
@@ -45,6 +47,18 @@ function TrackContent() {
     setResults(found)
     setSearched(true)
   }, [orders])
+
+  // Fast poll (10s) when any found order is still pending/paid/processing
+  // Stops automatically when all orders are delivered or cancelled
+  useEffect(() => {
+    const hasPending = results.some(o => o.status === 'pending' || o.status === 'paid' || o.status === 'processing')
+    if (fastPollRef.current) { clearInterval(fastPollRef.current); fastPollRef.current = null }
+    if (!hasPending) return
+    fastPollRef.current = setInterval(async () => {
+      await refreshFromServer()
+    }, 10000)
+    return () => { if (fastPollRef.current) clearInterval(fastPollRef.current) }
+  }, [results, refreshFromServer])
 
   useEffect(() => {
     if (!isLoaded) return
@@ -95,6 +109,22 @@ function TrackContent() {
               />
             </div>
             <Button type="submit">ค้นหา</Button>
+            {searched && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                disabled={isRefreshing}
+                title="รีเฟรชสถานะ"
+                onClick={async () => {
+                  setIsRefreshing(true)
+                  await refreshFromServer()
+                  setIsRefreshing(false)
+                }}
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            )}
           </form>
         </div>
 
@@ -200,18 +230,39 @@ function TrackContent() {
 
                 {/* Pending message */}
                 {order.status === 'pending' && (
-                  <div className="p-4 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 mt-4">
+                  <div className="p-4 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 mt-4 space-y-2">
                     <p className="text-sm text-yellow-200">
                       กำลังรอแอดมินตรวจสอบสลิป เมื่อยืนยันแล้วจะได้รับลิงก์สินค้าที่นี่
+                    </p>
+                    <p className="text-xs text-yellow-400/70 flex items-center gap-1.5">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      อัปเดตอัตโนมัติทุก 10 วินาที
                     </p>
                   </div>
                 )}
 
                 {/* Paid message */}
                 {order.status === 'paid' && (
-                  <div className="p-4 rounded-2xl border border-blue-500/30 bg-blue-500/10 mt-4">
+                  <div className="p-4 rounded-2xl border border-blue-500/30 bg-blue-500/10 mt-4 space-y-2">
                     <p className="text-sm text-blue-200">
-                      ชำระเงินเรียบร้อยแล้ว กำลังเตรียมส่งสินค้า
+                      ชำระเงินเรียบร้อยแล้ว กำลังเตรียมจัดส่งสินค้า
+                    </p>
+                    <p className="text-xs text-blue-400/70 flex items-center gap-1.5">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      อัปเดตอัตโนมัติทุก 10 วินาที
+                    </p>
+                  </div>
+                )}
+
+                {/* Processing message */}
+                {order.status === 'processing' && (
+                  <div className="p-4 rounded-2xl border border-primary/30 bg-primary/10 mt-4 space-y-2">
+                    <p className="text-sm text-primary/80">
+                      กำลังจัดส่งสินค้า รอรับลิงก์สินค้าได้เลย
+                    </p>
+                    <p className="text-xs text-primary/50 flex items-center gap-1.5">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      อัปเดตอัตโนมัติทุก 10 วินาที
                     </p>
                   </div>
                 )}
