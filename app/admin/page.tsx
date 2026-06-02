@@ -300,7 +300,7 @@ function OrdersTab() {
   const [refreshing, setRefreshing] = useState(false)
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'highest'>('newest')
-  const [deliveryLinks, setDeliveryLinks] = useState<Record<string, string>>({})
+  const [deliveryLinks, setDeliveryLinks] = useState<Record<string, string[]>>({})
   const [editNotes, setEditNotes] = useState<Record<string, string>>({})
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
   const [slipModal, setSlipModal] = useState<string | null>(null)
@@ -361,14 +361,15 @@ function OrdersTab() {
   const handleConfirmDelivery = (orderId: string) => {
     const order = orders.find(o => o.id === orderId)
     if (!order) return
-    // Auto-pull from product download_url if admin hasn't manually typed a link
-    const autoLink = order.items
+    const autoLinks = order.items
       .map(item => getProductById(item.id)?.download_url || '')
-      .filter(Boolean)[0] || ''
-    const link = deliveryLinks[orderId] !== undefined
-      ? deliveryLinks[orderId]
-      : (order.delivery_link || autoLink)
-    updateOrder(orderId, { status: 'delivered', delivery_link: link })
+      .filter(Boolean)
+    const links = (deliveryLinks[orderId] ?? (
+      order.delivery_links?.length ? order.delivery_links
+      : order.delivery_link ? [order.delivery_link]
+      : autoLinks
+    )).filter(Boolean)
+    updateOrder(orderId, { status: 'delivered', delivery_links: links, delivery_link: links[0] || '' })
     toast.success('ยืนยันสลิปและส่งสินค้าแล้ว')
   }
 
@@ -475,7 +476,7 @@ function OrdersTab() {
           const isDelivered = order.status === 'delivered'
           const isCancelled = order.status === 'cancelled'
           const isExpanded = expandedOrders.has(order.id)
-          const defaultLink = order.items.map(i => getProductById(i.id)?.download_url || '').filter(Boolean)[0] || ''
+          const autoLinks = order.items.map(i => getProductById(i.id)?.download_url || '').filter(Boolean)
           const isEditingNote = editNotes[order.id] !== undefined
           const slipResult = slipResults[order.id]
           const timeAgo = (() => {
@@ -638,35 +639,73 @@ function OrdersTab() {
                   </div>
 
                   {/* Delivery */}
-                  {!isDelivered && !isCancelled && (
-                    <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5">
-                      <p className="text-xs font-bold text-emerald-400 mb-2">ส่งสินค้า {!defaultLink && <span className="text-yellow-500 font-normal">— ยังไม่มีลิงก์สินค้า กรอกด้านล่าง</span>}</p>
-                      <div className="flex gap-2 mb-2">
-                        <Input
-                          placeholder={defaultLink || 'วางลิงก์ เช่น Google Drive, Dropbox...'}
-                          value={deliveryLinks[order.id] ?? (order.delivery_link || defaultLink)}
-                          onChange={e => setDeliveryLinks(prev => ({ ...prev, [order.id]: e.target.value }))}
-                          className="flex-1 text-xs h-8"
-                        />
+                  {!isDelivered && !isCancelled && (() => {
+                    const currentLinks: string[] = deliveryLinks[order.id] ?? (
+                      order.delivery_links?.length ? order.delivery_links
+                      : order.delivery_link ? [order.delivery_link]
+                      : autoLinks.length ? autoLinks
+                      : ['']
+                    )
+                    const setLinks = (links: string[]) =>
+                      setDeliveryLinks(prev => ({ ...prev, [order.id]: links }))
+                    return (
+                      <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-bold text-emerald-400">ลิ้งส่งสินค้า ({currentLinks.filter(Boolean).length}/{Math.min(currentLinks.length, 10)} รายการ)</p>
+                          {currentLinks.length < 10 && (
+                            <button
+                              type="button"
+                              onClick={() => setLinks([...currentLinks, ''])}
+                              className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                            >
+                              <Plus className="w-3 h-3" /> เพิ่มลิ้ง
+                            </button>
+                          )}
+                        </div>
+                        {currentLinks.map((link, idx) => (
+                          <div key={idx} className="flex gap-1.5 items-center">
+                            <span className="text-[10px] text-muted-foreground w-4 shrink-0 text-center">{idx + 1}</span>
+                            <Input
+                              placeholder={autoLinks[idx] || 'https://drive.google.com/...'}
+                              value={link}
+                              onChange={e => {
+                                const next = [...currentLinks]
+                                next[idx] = e.target.value
+                                setLinks(next)
+                              }}
+                              className="flex-1 text-xs h-7"
+                            />
+                            {currentLinks.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => setLinks(currentLinks.filter((_, i) => i !== idx))}
+                                className="text-muted-foreground hover:text-destructive shrink-0"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <div className="flex gap-2 pt-1">
+                          <Button onClick={() => handleRejectOrder(order.id)} variant="outline" size="sm" className="gap-1.5 border-destructive/50 text-destructive hover:bg-destructive/10 text-xs h-8">
+                            <X className="w-3 h-3" /> ปฏิเสธ
+                          </Button>
+                          <Button onClick={() => handleConfirmDelivery(order.id)} size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-xs h-8 flex-1">
+                            <Check className="w-3 h-3" /> ยืนยันสลิป &amp; ส่งสินค้า
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button onClick={() => handleRejectOrder(order.id)} variant="outline" size="sm" className="gap-1.5 border-destructive/50 text-destructive hover:bg-destructive/10 text-xs h-8">
-                          <X className="w-3 h-3" /> ปฏิเสธ
-                        </Button>
-                        <Button onClick={() => handleConfirmDelivery(order.id)} size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-xs h-8 flex-1">
-                          <Check className="w-3 h-3" /> ยืนยันสลิป
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                    )
+                  })()}
 
-                  {isDelivered && order.delivery_link && (
-                    <div className="p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex items-center gap-2 text-xs">
-                      <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-emerald-400">ส่งแล้ว: </span>
-                        <a href={order.delivery_link} target="_blank" rel="noopener noreferrer" className="text-emerald-300 hover:underline break-all">{order.delivery_link}</a>
-                      </div>
+                  {isDelivered && (order.delivery_links?.length || order.delivery_link) && (
+                    <div className="p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 space-y-1.5">
+                      <p className="text-xs font-bold text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> ส่งสินค้าแล้ว</p>
+                      {(order.delivery_links?.length ? order.delivery_links : [order.delivery_link]).filter(Boolean).map((lnk, i) => (
+                        <a key={i} href={lnk} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-emerald-300 hover:text-emerald-200 hover:underline break-all">
+                          <ExternalLink className="w-3 h-3 shrink-0" />{lnk}
+                        </a>
+                      ))}
                     </div>
                   )}
 

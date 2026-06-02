@@ -54,6 +54,7 @@ export interface Order {
   member_id: string
   source: string
   delivery_link: string
+  delivery_links?: string[]
   admin_note: string
   promo_code: string
   discount_amount: number

@@ -113,12 +113,17 @@ function TrackContent() {
             const StatusIcon = status.icon
             const isDelivered = order.status === 'delivered'
             
-            // Get delivery links: use order.delivery_link as one entry, else per-product download_url
-            const deliveryLinks = order.delivery_link
-              ? [{ name: order.items.map(i => i.name).join(', '), link: order.delivery_link }]
-              : order.items
-                  .map(item => ({ name: item.name, link: getProductById(item.id)?.download_url || '' }))
-                  .filter(item => item.link)
+            // Resolve delivery links: delivery_links array > delivery_link string > per-product download_url
+            const rawLinks: string[] =
+              order.delivery_links?.length
+                ? order.delivery_links
+                : order.delivery_link
+                  ? [order.delivery_link]
+                  : order.items.map(i => getProductById(i.id)?.download_url || '').filter(Boolean)
+            const deliveryLinks = rawLinks.map((link, i) => ({
+              name: order.items[i]?.name || order.items.map(x => x.name).join(', '),
+              link,
+            }))
             
             return (
               <div 

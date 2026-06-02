@@ -228,12 +228,9 @@ async function fetchFromServer(): Promise<ServerPayload> {
 }
 
 function pushToServer(payload: ServerPayload) {
-  fetch('/api/store', {
+  fetch('/api/store-sync', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-store-token': process.env.NEXT_PUBLIC_STORE_API_SECRET ?? '',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   }).catch(() => {})
 }
@@ -404,7 +401,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           sku: product.sku,
           name: product.name,
           category: product.category,
-          price: product.sale_price || product.price,
+          price: product.sale_price != null && product.sale_price >= 0 ? product.sale_price : product.price,
           qty,
           delivery_note: product.delivery_note
         }]
@@ -413,8 +410,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       write(STORAGE_KEYS.cart, updated)
       return updated
     })
-    
-  }, [products])
+
+  }, [products, currentMember, orders])
 
   const updateCartItem = useCallback((productId: string, qty: number) => {
     setCart(prev => {

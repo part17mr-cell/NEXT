@@ -55,7 +55,7 @@ function CheckoutContent() {
           sku: product.sku,
           name: product.name,
           category: product.category,
-          price: product.sale_price || product.price,
+          price: product.sale_price != null && product.sale_price >= 0 ? product.sale_price : product.price,
           qty: 1,
           delivery_note: product.delivery_note
         }])
@@ -160,17 +160,18 @@ function CheckoutContent() {
         updatePromoCode(appliedPromo.promoCode.id, { uses: appliedPromo.promoCode.uses + 1 })
       }
 
-      // Auto-verify slip if API keys are configured in settings
-      const hasTabscanner = !!settings.slipApi?.tabscannerKey
-      const hasEasyslip   = !!settings.slipApi?.easyslipKey
-      if (hasTabscanner || hasEasyslip) {
-        setVerifyStatus('verifying')
-        try {
-          const verifyRes = await fetch('/api/verify-slip', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ slip_data: slipData }),
-          })
+      // Auto-verify slip — server decides whether API keys are configured (503 = no keys)
+      setVerifyStatus('verifying')
+      try {
+        const verifyRes = await fetch('/api/verify-slip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slip_data: slipData }),
+        })
+        if (verifyRes.status === 503) {
+          // No API keys configured — skip silently
+          setVerifyStatus('idle')
+        } else {
           const verifyData = await verifyRes.json() as { ok: boolean; verified?: boolean; error?: string }
           if (verifyData.ok && verifyData.verified) {
             updateOrder(order.id, { status: 'paid' })
@@ -185,9 +186,9 @@ function CheckoutContent() {
               return
             }
           }
-        } catch {
-          setVerifyStatus('idle') // verify failed silently — order still created
         }
+      } catch {
+        setVerifyStatus('idle')
       }
 
       // Send Discord webhook notification (fire-and-forget)
