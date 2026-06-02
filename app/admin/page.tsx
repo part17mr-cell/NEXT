@@ -2839,7 +2839,7 @@ function HomePageTab() {
 // Main Admin Page
 export default function AdminPage() {
   const router = useRouter()
-  const { settings, isAdmin, adminLogout, isLoaded, adminLogin } = useStore()
+  const { settings, isAdmin, adminLogout, isLoaded, adminLogin, syncStatus, lastSyncedAt } = useStore()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [loginForm, setLoginForm] = useState({ username: '', password: '' })
   const [loginLoading, setLoginLoading] = useState(false)
@@ -3031,10 +3031,30 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-4">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          Local Storage
-        </span>
+        {syncStatus === 'syncing' && (
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-xs font-bold mb-4">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            กำลังซิงค์...
+          </span>
+        )}
+        {syncStatus === 'ok' && (
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-4" title={lastSyncedAt ? `ซิงค์ล่าสุด ${lastSyncedAt.toLocaleTimeString('th-TH')}` : ''}>
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            ซิงค์ Redis แล้ว
+          </span>
+        )}
+        {syncStatus === 'error' && (
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold mb-4">
+            <span className="w-2 h-2 rounded-full bg-red-500" />
+            ซิงค์ล้มเหลว
+          </span>
+        )}
+        {syncStatus === 'idle' && (
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border text-muted-foreground text-xs font-bold mb-4">
+            <span className="w-2 h-2 rounded-full bg-muted-foreground" />
+            Local Only
+          </span>
+        )}
 
         {/* Tabs */}
         <nav className="space-y-2 mb-4">

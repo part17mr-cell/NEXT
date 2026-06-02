@@ -81,6 +81,10 @@ interface StoreContextType {
   // Manual refresh from server
   refreshFromServer: () => Promise<void>
 
+  // Sync status
+  syncStatus: 'idle' | 'syncing' | 'ok' | 'error'
+  lastSyncedAt: Date | null
+
   // Helpers
   formatMoney: (amount: number) => string
   isLoaded: boolean
@@ -227,13 +231,7 @@ async function fetchFromServer(): Promise<ServerPayload> {
   }
 }
 
-function pushToServer(payload: ServerPayload) {
-  fetch('/api/store-sync', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  }).catch(() => {})
-}
+// pushToServer removed — sync is now handled inside scheduleServerSync with status tracking
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -248,6 +246,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [reviews, setReviews] = useState<Review[]>([])
   const [viewCounts, setViewCounts] = useState<Record<string, number>>({})
   const [modalCount, setModalCount] = useState(0)
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle')
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null)
 
   // Ref tracking latest server-syncable state (updated each render)
   const serverStateRef = useRef<ServerPayload>({})
@@ -258,8 +258,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const scheduleServerSync = useCallback(() => {
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
+    setSyncStatus('syncing')
     syncTimerRef.current = setTimeout(() => {
-      pushToServer(serverStateRef.current)
+      fetch('/api/store-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(serverStateRef.current),
+      }).then(r => {
+        if (r.ok) { setSyncStatus('ok'); setLastSyncedAt(new Date()) }
+        else setSyncStatus('error')
+      }).catch(() => setSyncStatus('error'))
     }, 400)
   }, [])
 
@@ -803,6 +811,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       openModal,
       closeModal,
       refreshFromServer,
+      syncStatus,
+      lastSyncedAt,
       formatMoney,
       isLoaded,
     }}>
