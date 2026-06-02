@@ -55,9 +55,9 @@ function base64ToBlob(slip_data: string): { blob: Blob; ext: string } {
   return { blob: new Blob([buffer], { type: mime }), ext }
 }
 
-async function tabscannerPoll(token: string, apiKey: string, attempts = 8, delay = 1200): Promise<Record<string, unknown> | null> {
+async function tabscannerPoll(token: string, apiKey: string, attempts = 18, delay = 800): Promise<Record<string, unknown> | null> {
   for (let i = 0; i < attempts; i++) {
-    await new Promise(r => setTimeout(r, delay))
+    await new Promise(r => setTimeout(r, i === 0 ? 1000 : delay))
     const res = await fetch(`${TABSCANNER_RESULT}/${token}`, {
       headers: { Authorization: apiKey },
       cache: 'no-store',
@@ -74,6 +74,7 @@ async function verifyWithTabscanner(slip_data: string, apiKey: string): Promise<
   const { blob, ext } = base64ToBlob(slip_data)
   const form = new FormData()
   form.append('file', blob, `slip.${ext}`)
+  form.append('document_type', 'receipt')  // hint: Thai bank slip / receipt
 
   const submitRes = await fetch(TABSCANNER_PROCESS, {
     method: 'POST',

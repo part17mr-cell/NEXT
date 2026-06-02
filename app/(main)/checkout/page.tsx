@@ -1,6 +1,30 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
+
+// Compress slip image before sending — reduces size from ~3MB to ~200KB
+// Tabscanner works much better with smaller images (faster OCR, less timeout)
+async function compressSlip(dataUrl: string, maxDim = 1600, quality = 0.88): Promise<string> {
+  return new Promise(resolve => {
+    const img = new Image()
+    img.onload = () => {
+      let { width, height } = img
+      if (width > maxDim || height > maxDim) {
+        if (width > height) { height = Math.round(height * maxDim / width); width = maxDim }
+        else { width = Math.round(width * maxDim / height); height = maxDim }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width; canvas.height = height
+      const ctx = canvas.getContext('2d')!
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, width, height)
+      ctx.drawImage(img, 0, 0, width, height)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.onerror = () => resolve(dataUrl) // fallback: use original
+    img.src = dataUrl
+  })
+}
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { CreditCard, Upload, Check, Loader2, Building, FileText, Image as ImageIcon, Tag, X, MessageCircle, Copy, ChevronRight, Package, LogIn, UserPlus } from 'lucide-react'
@@ -128,12 +152,13 @@ function CheckoutContent() {
     setLoading(true)
     
     try {
-      // Convert slip to base64
-      const slipData = await new Promise<string>((resolve) => {
+      // Convert slip to base64 then compress (ลดขนาดจาก ~3MB → ~200KB)
+      const rawSlipData = await new Promise<string>((resolve) => {
         const reader = new FileReader()
         reader.onload = () => resolve(reader.result as string)
         reader.readAsDataURL(form.slip!)
       })
+      const slipData = await compressSlip(rawSlipData)
       
       const order = createOrder({
         status: 'pending',
