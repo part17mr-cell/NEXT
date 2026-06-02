@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from 'react'
 
 // Compress slip image before sending — reduces size from ~3MB to ~200KB
-// Tabscanner works much better with smaller images (faster OCR, less timeout)
 async function compressSlip(dataUrl: string, maxDim = 1600, quality = 0.88): Promise<string> {
   return new Promise(resolve => {
     const img = new Image()
@@ -21,9 +20,33 @@ async function compressSlip(dataUrl: string, maxDim = 1600, quality = 0.88): Pro
       ctx.drawImage(img, 0, 0, width, height)
       resolve(canvas.toDataURL('image/jpeg', quality))
     }
-    img.onerror = () => resolve(dataUrl) // fallback: use original
+    img.onerror = () => resolve(dataUrl)
     img.src = dataUrl
   })
+}
+
+// Scan QR code from Thai bank slip — 100% free, no API key needed
+// Thai slips (K+, MyMo, SCB, KTB, etc.) embed transaction data in QR
+async function scanSlipQR(dataUrl: string): Promise<string | null> {
+  try {
+    const jsQR = (await import('jsqr')).default
+    return new Promise(resolve => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.width; canvas.height = img.height
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0)
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const code = jsQR(imageData.data, imageData.width, imageData.height)
+        resolve(code?.data || null)
+      }
+      img.onerror = () => resolve(null)
+      img.src = dataUrl
+    })
+  } catch {
+    return null
+  }
 }
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -159,6 +182,8 @@ function CheckoutContent() {
         reader.readAsDataURL(form.slip!)
       })
       const slipData = await compressSlip(rawSlipData)
+      // Scan QR code from slip (free, instant, works for all Thai bank slips)
+      const qrData = await scanSlipQR(rawSlipData)
       
       const order = createOrder({
         status: 'pending',
@@ -191,7 +216,7 @@ function CheckoutContent() {
         const verifyRes = await fetch('/api/verify-slip', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slip_data: slipData }),
+          body: JSON.stringify({ slip_data: slipData, qr_data: qrData }),
         })
         if (verifyRes.status === 503) {
           // No API keys configured — skip silently

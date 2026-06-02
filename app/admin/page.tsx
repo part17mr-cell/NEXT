@@ -626,7 +626,7 @@ function OrdersTab() {
                                 {slipResult.sendingBank ? ` (${slipResult.sendingBank})` : ''}
                                 {slipResult.receiver ? ` → ${slipResult.receiver}` : ''}
                                 <span className="block opacity-50 mt-0.5">
-                                  {slipResult.provider === 'tabscanner' ? 'via Tabscanner' : 'via EasySlip'}
+                                  {slipResult.provider === 'tabscanner' ? 'via Tabscanner' : slipResult.provider === 'qr' ? 'via QR Code' : 'via EasySlip'}
                                   {slipResult.transRef ? ` · Ref: ${slipResult.transRef}` : ''}
                                 </span>
                               </span>

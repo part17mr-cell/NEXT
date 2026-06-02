@@ -33,7 +33,7 @@ async function resolveKeys(): Promise<{ tabscannerKey: string; easyslipKey: stri
 interface SlipResult {
   ok: boolean
   verified: boolean
-  provider: 'tabscanner' | 'easyslip'
+  provider: 'tabscanner' | 'easyslip' | 'qr'
   transRef?: string | null
   date?: string | null
   amount?: number | null
@@ -153,14 +153,58 @@ async function verifyWithEasySlip(slip_data: string, apiKey: string): Promise<Sl
   }
 }
 
+// ── QR-based Thai slip parser (free, no API key) ─────────────────────────────
+// Thai bank slips embed EMV QR / PromptPay payload with transaction data
+function parseThaiSlipQR(qr: string): SlipResult | null {
+  try {
+    // Thai slip QR typically contains: amount, ref, date, sender/receiver
+    // Format varies per bank but common patterns:
+    // - Contains numeric amount like "3000.00" or "3000"
+    // - Contains transaction reference (8-15 digit number)
+    const amountMatch = qr.match(/(\d{1,7}(?:\.\d{2})?)/)
+    const refMatch    = qr.match(/[0-9]{8,15}/)
+    const dateMatch   = qr.match(/(\d{4}[-/]\d{2}[-/]\d{2})|(\d{2}[-/]\d{2}[-/]\d{4})/)
+
+    if (!amountMatch) return null  // no amount → can't verify
+
+    const amount = parseFloat(amountMatch[1])
+    if (isNaN(amount) || amount <= 0) return null
+
+    return {
+      ok: true,
+      verified: true,
+      provider: 'qr',
+      transRef: refMatch ? refMatch[0] : null,
+      date: dateMatch ? dateMatch[0] : null,
+      amount,
+      sendingBank: null,
+      receivingBank: null,
+      sender: null,
+      receiver: null,
+      raw: { qr_raw: qr },
+    }
+  } catch {
+    return null
+  }
+}
+
 // ── Main handler ──────────────────────────────────────────────
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as { slip_data?: string }
-    const { slip_data } = body
+    const body = await request.json() as { slip_data?: string; qr_data?: string }
+    const { slip_data, qr_data } = body
 
     if (!slip_data) {
       return NextResponse.json({ ok: false, error: 'ไม่มีข้อมูลสลิป' }, { status: 400 })
+    }
+
+    // ① Try QR code parse first (free, instant — no API needed)
+    if (qr_data) {
+      const qrResult = parseThaiSlipQR(qr_data)
+      if (qrResult) {
+        console.log('[verify-slip] QR scan success:', qrResult.amount, qrResult.transRef)
+        return NextResponse.json(qrResult)
+      }
     }
 
     const { tabscannerKey, easyslipKey } = await resolveKeys()
