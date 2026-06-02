@@ -158,6 +158,7 @@ export function ProductCard({ product }: ProductCardProps) {
       return
     }
 
+    const freeLinks = product.download_urls?.filter(Boolean).length ? product.download_urls.filter(Boolean) : product.download_url ? [product.download_url] : []
     createOrder({
       status: 'delivered',
       customer_name: currentMember.display_name || currentMember.username,
@@ -167,11 +168,12 @@ export function ProductCard({ product }: ProductCardProps) {
       paid_amount: 0, paid_at: new Date().toISOString(), total_amount: 0,
       items: [{ id: product.id, sku: product.sku, name: product.name, category: product.category, price: 0, qty: 1, delivery_note: product.delivery_note }],
       slip_data: '', member_id: currentMember.id, source: 'free_claim',
-      delivery_link: product.download_url || '',
+      delivery_link: freeLinks[0] || '',
+      delivery_links: freeLinks,
       admin_note: '', promo_code: '', discount_amount: 0,
     })
-    if (product.download_url) {
-      window.open(product.download_url, '_blank', 'noopener')
+    if (freeLinks[0]) {
+      window.open(freeLinks[0], '_blank', 'noopener')
       toast.success('รับสินค้าแล้ว! เปิดลิงก์ให้แล้ว')
     } else {
       toast.success('รับสินค้าแล้ว! แอดมินจะส่งสินค้าให้เร็วๆ นี้')
@@ -642,6 +644,7 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
       return
     }
 
+    const freeLinks2 = product.download_urls?.filter(Boolean).length ? product.download_urls.filter(Boolean) : product.download_url ? [product.download_url] : []
     createOrder({
       status: 'delivered',
       customer_name: currentMember.display_name || currentMember.username,
@@ -651,11 +654,12 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
       paid_amount: 0, paid_at: new Date().toISOString(), total_amount: 0,
       items: [{ id: product.id, sku: product.sku, name: product.name, category: product.category, price: 0, qty: 1, delivery_note: product.delivery_note }],
       slip_data: '', member_id: currentMember.id, source: 'free_claim',
-      delivery_link: product.download_url || '',
+      delivery_link: freeLinks2[0] || '',
+      delivery_links: freeLinks2,
       admin_note: '', promo_code: '', discount_amount: 0,
     })
-    if (product.download_url) {
-      window.open(product.download_url, '_blank', 'noopener')
+    if (freeLinks2[0]) {
+      window.open(freeLinks2[0], '_blank', 'noopener')
       toast.success('รับสินค้าแล้ว! เปิดลิงก์ให้แล้ว')
     } else {
       toast.success('รับสินค้าแล้ว! แอดมินจะส่งสินค้าให้เร็วๆ นี้')

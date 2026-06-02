@@ -361,13 +361,14 @@ function OrdersTab() {
   const handleConfirmDelivery = (orderId: string) => {
     const order = orders.find(o => o.id === orderId)
     if (!order) return
-    const autoLinks = order.items
-      .map(item => getProductById(item.id)?.download_url || '')
-      .filter(Boolean)
+    const productAutoLinks = order.items.flatMap(i => {
+      const p = getProductById(i.id)
+      return p?.download_urls?.filter(Boolean).length ? p.download_urls.filter(Boolean) : p?.download_url ? [p.download_url] : []
+    })
     const links = (deliveryLinks[orderId] ?? (
       order.delivery_links?.length ? order.delivery_links
       : order.delivery_link ? [order.delivery_link]
-      : autoLinks
+      : productAutoLinks
     )).filter(Boolean)
     updateOrder(orderId, { status: 'delivered', delivery_links: links, delivery_link: links[0] || '' })
     toast.success('ยืนยันสลิปและส่งสินค้าแล้ว')
@@ -476,7 +477,10 @@ function OrdersTab() {
           const isDelivered = order.status === 'delivered'
           const isCancelled = order.status === 'cancelled'
           const isExpanded = expandedOrders.has(order.id)
-          const autoLinks = order.items.map(i => getProductById(i.id)?.download_url || '').filter(Boolean)
+          const autoLinks = order.items.flatMap(i => {
+            const p = getProductById(i.id)
+            return p?.download_urls?.filter(Boolean).length ? p.download_urls.filter(Boolean) : p?.download_url ? [p.download_url] : []
+          })
           const isEditingNote = editNotes[order.id] !== undefined
           const slipResult = slipResults[order.id]
           const timeAgo = (() => {
@@ -1039,17 +1043,52 @@ function ProductForm({
           ))}
         </div>
         <div className="space-y-2 sm:col-span-2 p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/5">
-          <Label className="text-emerald-400 font-bold flex items-center gap-2">
-            <ExternalLink className="w-4 h-4" />
-            ลิงก์ส่งสินค้าอัตโนมัติ
-          </Label>
-          <Input
-            value={form.download_url}
-            onChange={e => setForm(prev => ({ ...prev, download_url: e.target.value }))}
-            placeholder="https://drive.google.com/... หรือ Dropbox, OneDrive..."
-            className="font-mono text-sm"
-          />
-          <p className="text-xs text-emerald-300/70">เมื่อแอดมินกด "ยืนยันสลิป" ลิงก์นี้จะส่งให้ลูกค้าทันทีโดยอัตโนมัติ</p>
+          <div className="flex items-center justify-between">
+            <Label className="text-emerald-400 font-bold flex items-center gap-2">
+              <ExternalLink className="w-4 h-4" />
+              ลิงก์ส่งสินค้าอัตโนมัติ ({(form.download_urls ?? (form.download_url ? [form.download_url] : [])).filter(Boolean).length}/10)
+            </Label>
+            {(form.download_urls ?? [form.download_url]).filter(Boolean).length < 10 && (
+              <button
+                type="button"
+                onClick={() => setForm(prev => {
+                  const current = prev.download_urls ?? (prev.download_url ? [prev.download_url] : [''])
+                  return { ...prev, download_urls: [...current, ''], download_url: current[0] || '' }
+                })}
+                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3" /> เพิ่มลิ้ง
+              </button>
+            )}
+          </div>
+          {(form.download_urls ?? (form.download_url ? [form.download_url] : [''])).map((url, idx) => (
+            <div key={idx} className="flex gap-2 items-center">
+              <span className="text-[10px] text-emerald-400/60 w-4 text-center shrink-0">{idx + 1}</span>
+              <Input
+                value={url}
+                onChange={e => setForm(prev => {
+                  const urls = [...(prev.download_urls ?? (prev.download_url ? [prev.download_url] : ['']))]
+                  urls[idx] = e.target.value
+                  return { ...prev, download_urls: urls, download_url: urls[0] || '' }
+                })}
+                placeholder="https://drive.google.com/..."
+                className="font-mono text-xs flex-1"
+              />
+              {(form.download_urls ?? [form.download_url]).length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => {
+                    const urls = (prev.download_urls ?? [prev.download_url]).filter((_, i) => i !== idx)
+                    return { ...prev, download_urls: urls, download_url: urls[0] || '' }
+                  })}
+                  className="text-muted-foreground hover:text-destructive shrink-0"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ))}
+          <p className="text-xs text-emerald-300/70">เมื่อแอดมินกด "ยืนยันสลิป" ลิ้งทั้งหมดจะส่งให้ลูกค้าทันที ลูกค้าไม่เห็นจนกว่าจะยืนยัน</p>
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label>ข้อความส่งมอบ</Label>

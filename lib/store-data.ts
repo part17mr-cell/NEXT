@@ -15,6 +15,7 @@ export interface Product {
   image_url: string
   delivery_note: string
   download_url: string
+  download_urls?: string[]
   is_active: boolean
   sort_order: number
   stock_qty: number | null
