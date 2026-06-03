@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Zap, Sparkles, Check, X, Eye, Package, User, Car, Boxes, Flame, Shield, Monitor, Gamepad2, Pencil, Save, Camera, Trash2, Clock, Users, Tag, Star, MessageSquare, Send, Gift } from 'lucide-react'
+import { ShoppingCart, Zap, Sparkles, Check, X, Eye, Package, User, Car, Boxes, Flame, Shield, Monitor, Gamepad2, Pencil, Save, Camera, Trash2, Clock, Users, Tag, Star, MessageSquare, Send, Gift, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { type Product } from '@/lib/store-data'
 import { useStore } from '@/lib/store-context'
@@ -754,14 +754,17 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
           const allImages = [...(product.image_url ? [product.image_url] : []), ...gallery]
           const activeImg = allImages[selectedImageIdx] ?? allImages[0] ?? ''
           const hasGallery = allImages.length > 1
+          const goPrev = () => setSelectedImageIdx(i => (i - 1 + allImages.length) % allImages.length)
+          const goNext = () => setSelectedImageIdx(i => (i + 1) % allImages.length)
           return (
             <div className="shrink-0">
-              <div className="relative h-52 w-full bg-card overflow-hidden">
+              {/* Main image — h-72 */}
+              <div className="relative h-72 w-full bg-card overflow-hidden">
                 {activeImg ? (
                   <img
                     src={activeImg}
                     alt={product.name}
-                    className="absolute inset-0 w-full h-full object-contain"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 ) : (
                   <div className={`absolute inset-0 bg-gradient-to-br ${catStyle.gradient} flex flex-col items-center justify-center gap-3`}>
@@ -772,8 +775,12 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
                     <span className={`relative z-10 text-xs font-bold tracking-widest uppercase ${catStyle.textColor}`}>{product.category}</span>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
-                <div className="absolute top-5 left-7 flex items-center gap-1.5 z-20">
+
+                {/* gradient overlay ล่าง */}
+                <div className="absolute inset-0 bg-gradient-to-t from-card/80 via-transparent to-transparent pointer-events-none" />
+
+                {/* badges บนซ้าย */}
+                <div className="absolute top-3 left-3 flex items-center gap-1.5 z-20 flex-wrap">
                   {hasDiscount && (
                     <span className="px-2.5 py-1 rounded-lg bg-emerald-500 text-white text-xs font-bold shadow-lg">
                       -{discountPercent}%
@@ -782,28 +789,67 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
                   <span className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-xs font-bold shadow-lg">
                     {product.badge || 'พร้อมส่ง'}
                   </span>
-                  <span className="px-2.5 py-1 rounded-lg bg-black/55 backdrop-blur-sm border border-white/20 text-white text-xs font-bold shadow-lg">
+                  <span className="px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-sm border border-white/20 text-white text-xs font-bold shadow-lg">
                     {product.category || 'Digital'}
                   </span>
                 </div>
+
+                {/* ลูกศรซ้าย/ขวา — แสดงเฉพาะเมื่อมีหลายรูป */}
+                {hasGallery && (
+                  <>
+                    <button
+                      onClick={goPrev}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-black/70 transition-colors shadow-lg"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={goNext}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-black/70 transition-colors shadow-lg"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                    {/* dot indicators */}
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+                      {allImages.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setSelectedImageIdx(i)}
+                          className={`rounded-full transition-all ${
+                            selectedImageIdx === i
+                              ? 'w-4 h-2 bg-white'
+                              : 'w-2 h-2 bg-white/40 hover:bg-white/70'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* admin edit button */}
                 {isAdmin && (
                   <button
                     onClick={() => setShowEdit(true)}
-                    className="absolute bottom-3 left-3 z-10 h-8 px-3 rounded-full bg-amber-500 backdrop-blur-sm flex items-center gap-1.5 text-white text-xs font-bold hover:bg-amber-600 transition-colors shadow-lg"
+                    className="absolute bottom-3 left-3 z-20 h-8 px-3 rounded-full bg-amber-500 backdrop-blur-sm flex items-center gap-1.5 text-white text-xs font-bold hover:bg-amber-600 transition-colors shadow-lg"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     แก้ไข
                   </button>
                 )}
               </div>
+
               {/* Thumbnail strip */}
               {hasGallery && (
-                <div className="flex gap-2 px-3 pt-2 pb-1 overflow-x-auto">
+                <div className="flex gap-2 px-3 pt-2.5 pb-1 overflow-x-auto">
                   {allImages.map((img, i) => (
                     <button
                       key={i}
                       onClick={() => setSelectedImageIdx(i)}
-                      className={`shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${selectedImageIdx === i ? 'border-primary scale-105' : 'border-border/40 opacity-60 hover:opacity-100'}`}
+                      className={`shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 transition-all ${
+                        selectedImageIdx === i
+                          ? 'border-primary scale-105 shadow-md shadow-primary/20'
+                          : 'border-border/40 opacity-50 hover:opacity-100'
+                      }`}
                     >
                       <img src={img} alt={`รูป ${i + 1}`} className="w-full h-full object-cover" />
                     </button>
