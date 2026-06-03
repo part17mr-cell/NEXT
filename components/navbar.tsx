@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Home, ShoppingBag, Headset, UserPlus, LogIn, User, LogOut, Settings } from 'lucide-react'
+import { Menu, X, Home, ShoppingBag, Headset, UserPlus, LogIn, User, LogOut, Settings, Zap } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -28,6 +28,7 @@ export function Navbar() {
   const navLinks = [
     { href: '/', label: 'หน้าหลัก', icon: Home },
     { href: '/store', label: 'ร้านค้า', icon: ShoppingBag },
+    { href: '/gpt-script', label: 'GPT สคริปต์ไวรัล', icon: Zap, highlight: true },
     { href: '/contact', label: 'ติดต่อ', icon: Headset },
   ]
 
@@ -75,6 +76,7 @@ export function Navbar() {
             {navLinks.map(link => {
               const Icon = link.icon
               const active = isActive(link.href)
+              const isHighlight = (link as { highlight?: boolean }).highlight
               return (
                 <Link key={link.href} href={link.href}>
                   <motion.div
@@ -84,7 +86,9 @@ export function Navbar() {
                       relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200
                       ${active
                         ? 'text-primary-foreground'
-                        : 'text-muted-foreground hover:text-foreground'
+                        : isHighlight
+                          ? 'text-primary hover:text-primary'
+                          : 'text-muted-foreground hover:text-foreground'
                       }
                     `}
                   >
@@ -94,6 +98,9 @@ export function Navbar() {
                         className="absolute inset-0 bg-primary rounded-lg"
                         transition={{ type: "spring", duration: 0.5 }}
                       />
+                    )}
+                    {!active && isHighlight && (
+                      <div className="absolute inset-0 bg-primary/10 border border-primary/20 rounded-lg" />
                     )}
                     <span className="relative z-10 flex items-center gap-2">
                       <Icon className="w-4 h-4" />
@@ -207,6 +214,7 @@ export function Navbar() {
                   {navLinks.map((link, index) => {
                     const Icon = link.icon
                     const active = isActive(link.href)
+                    const isHighlight = (link as { highlight?: boolean }).highlight
                     return (
                       <motion.div
                         key={link.href}
@@ -221,12 +229,19 @@ export function Navbar() {
                             flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all
                             ${active
                               ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                              : isHighlight
+                                ? 'text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                             }
                           `}
                         >
                           <Icon className="w-5 h-5" />
                           {link.label}
+                          {isHighlight && !active && (
+                            <span className="ml-auto px-2 py-0.5 rounded-md bg-primary/20 text-primary text-[10px] font-black">
+                              HOT
+                            </span>
+                          )}
                         </Link>
                       </motion.div>
                     )
