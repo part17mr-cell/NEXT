@@ -39,14 +39,26 @@ const FAQS = [
 export default function GptScriptLandingPage() {
   const { activeProducts, formatMoney, settings } = useStore()
 
-  const product = useMemo(() =>
-    activeProducts.find(p =>
-      p.name?.toLowerCase().includes('gpt') ||
-      p.name?.includes('สคริปต์ไวรัล') ||
-      p.sku?.toLowerCase().includes('gpt')
-    ) ?? activeProducts.find(p => (p.sale_price ?? p.price) === 199),
-    [activeProducts]
-  )
+  const product = useMemo(() => {
+    // หาสินค้าที่ขาย 199฿ จริง (ไม่ฟรี) โดย sort ด้วยยอดขายสูงสุด
+    const paid199 = activeProducts
+      .filter(p => {
+        const finalPrice = p.sale_price != null ? p.sale_price : p.price
+        return finalPrice === 199 && finalPrice > 0
+      })
+      .sort((a, b) => (b.sold ?? 0) - (a.sold ?? 0))
+    if (paid199.length > 0) return paid199[0]
+    // fallback: สินค้าชื่อมี gpt/สคริปต์ไวรัล และไม่ฟรี
+    return activeProducts.find(p => {
+      const finalPrice = p.sale_price != null ? p.sale_price : p.price
+      if (finalPrice === 0) return false
+      return (
+        p.name?.toLowerCase().includes('gpt') ||
+        p.name?.includes('สคริปต์ไวรัล') ||
+        p.sku?.toLowerCase().includes('gpt')
+      )
+    })
+  }, [activeProducts])
 
   const price     = product ? (product.sale_price ?? product.price) : 199
   const origPrice = product?.price ?? 990

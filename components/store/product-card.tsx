@@ -118,6 +118,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [showAdminEdit, setShowAdminEdit] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null)
 
   const price = product.sale_price || product.price
   const hasDiscount = product.price > price
@@ -630,6 +631,7 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
   const [isAdding, setIsAdding] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [selectedImageIdx, setSelectedImageIdx] = useState<number>(0)
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null)
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewComment, setReviewComment] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
@@ -758,13 +760,14 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
           const goNext = () => setSelectedImageIdx(i => (i + 1) % allImages.length)
           return (
             <div className="shrink-0">
-              {/* Main image — h-72 */}
+              {/* Main image — h-72, คลิกเพื่อ zoom */}
               <div className="relative h-72 w-full bg-card overflow-hidden">
                 {activeImg ? (
                   <img
                     src={activeImg}
                     alt={product.name}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover cursor-zoom-in"
+                    onClick={() => setLightboxImg(activeImg)}
                   />
                 ) : (
                   <div className={`absolute inset-0 bg-gradient-to-br ${catStyle.gradient} flex flex-col items-center justify-center gap-3`}>
@@ -1103,6 +1106,36 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
         }}
       />
     )}
+
+    {/* Lightbox — กดรูปแล้วดูเต็มจอ */}
+    <AnimatePresence>
+      {lightboxImg && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4"
+          onClick={() => setLightboxImg(null)}
+        >
+          <motion.img
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.85, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            src={lightboxImg}
+            alt="ดูรูปเต็ม"
+            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setLightboxImg(null)}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </motion.div>
+      )}
+    </AnimatePresence>
   </>
   )
 }
