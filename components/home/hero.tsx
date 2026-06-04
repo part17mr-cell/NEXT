@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
 import { Button } from '@/components/ui/button'
+import { Mascot } from '@/components/mascot'
 import { useMemo } from 'react'
 
 // ── animation helpers ──────────────────────────────────────────────────────
@@ -152,15 +153,20 @@ export function HomeHero() {
             </motion.div>
           </div>
 
-          {/* ── RIGHT: product showcase ───────────────────────────────── */}
+          {/* ── RIGHT: mascot + product showcase ─────────────────────── */}
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="relative flex justify-center items-center min-h-[420px] lg:min-h-[500px]"
           >
-            {/* glow behind card */}
+            {/* glow behind */}
             <div className="absolute w-72 h-72 bg-primary/15 rounded-full blur-3xl" />
+
+            {/* mascot — floating top-right */}
+            <div className="absolute -top-8 -right-4 z-30">
+              <Mascot page="home" size={160} message="ซื้อแล้วลุยเลย!" float />
+            </div>
 
             {/* ── Featured center card ── */}
             {featured && (

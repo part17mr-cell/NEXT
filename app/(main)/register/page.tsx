@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { UserPlus, Shield, Loader2, Lock, Check, ArrowRight, Sparkles, Eye, EyeOff } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
+import { Mascot } from '@/components/mascot'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -200,7 +201,10 @@ function RegisterContent() {
           </motion.form>
 
           {/* Right - Info */}
-          <aside className="p-8 rounded-2xl border border-border/50 bg-card/30 glass card-shine order-1 md:order-2">
+          <aside className="p-8 rounded-2xl border border-border/50 bg-card/30 glass card-shine order-1 md:order-2 relative overflow-visible">
+            <div className="absolute -top-16 right-4">
+              <Mascot page="register" size={140} message="สมัครฟรีไม่กัด!" float />
+            </div>
             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-6">
               <Shield className="w-3.5 h-3.5" />
               MEMBER
