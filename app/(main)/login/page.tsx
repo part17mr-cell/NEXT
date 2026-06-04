@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Mascot } from '@/components/mascot'
 
 function LoginContent() {
   const router = useRouter()
@@ -73,11 +72,7 @@ function LoginContent() {
           className="grid md:grid-cols-2 gap-6 items-stretch"
         >
           {/* Left - Info */}
-          <aside className="p-8 rounded-2xl border border-border/50 bg-card/30 glass card-shine relative overflow-visible">
-            {/* mascot */}
-            <div className="absolute -top-16 right-4">
-              <Mascot page="login" size={140} message="กลับมาแล้วเหรอ!" float />
-            </div>
+          <aside className="p-8 rounded-2xl border border-border/50 bg-card/30 glass card-shine">
             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-6">
               <Shield className="w-3.5 h-3.5" />
               SECURE LOGIN

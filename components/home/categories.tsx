@@ -163,20 +163,14 @@ export function HomeCategories() {
             ))}
           </div>
 
-          <motion.div {...fade(0.4)} className="mt-8 flex justify-end">
-            <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-primary/10 border border-primary/20">
-              <span className="text-2xl select-none">😎</span>
-              <div>
-                <p className="text-xs font-black text-primary">ดีแน่! ให้ลองดู</p>
-                <p className="text-[10px] text-muted-foreground">สินค้าคุณภาพสูง ราคาโปร</p>
-              </div>
-              <Link href="/store">
-                <button className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-black hover:bg-primary/90 transition-colors">
-                  <Zap className="w-3 h-3" />
-                  ไปเลย
-                </button>
-              </Link>
-            </div>
+          <motion.div {...fade(0.4)} className="mt-6 text-center">
+            <Link href="/store">
+              <button className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary/10 border border-primary/25 text-primary text-sm font-bold hover:bg-primary/20 transition-colors">
+                <Zap className="w-4 h-4" />
+                ดูสินค้าทั้งหมด
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </Link>
           </motion.div>
         </div>
       </section>
