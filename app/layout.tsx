@@ -32,17 +32,17 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'NEXT THON - Digital Store',
-  description: 'ร้านดิจิทัลระบบออโต้ ปลอดภัย 100% สั่งซื้อได้ตลอด 24 ชั่วโมง พร้อมบริการหลังการขาย',
-  keywords: ['digital store', 'next thon', 'gaming', 'fivem', 'roblox', 'account', 'digital products'],
-  authors: [{ name: 'NEXT THON' }],
+  title: 'JOB - ร้านขายสินค้าดิจิทัล',
+  description: 'จบงานไว ด้วยสินค้าดิจิทัลพร้อมใช้ Prompt, Script, Template, Workflow ส่งทันทีอัตโนมัติ',
+  keywords: ['digital store', 'prompt', 'script', 'template', 'workflow', 'content kit', 'digital products'],
+  authors: [{ name: 'JOB Digital Store' }],
   icons: {
     icon: '/favicon.ico',
   },
 }
 
 export const viewport = {
-  themeColor: '#6366f1',
+  themeColor: '#7c3aed',
   width: 'device-width',
   initialScale: 1,
 }
@@ -53,9 +53,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html 
-      lang="th" 
-      className={`${inter.variable} ${ibmPlex.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+    <html
+      lang="th"
+      className={`dark ${inter.variable} ${ibmPlex.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
       data-scroll-behavior="smooth"
     >
