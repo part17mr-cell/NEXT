@@ -28,7 +28,6 @@ export function Navbar() {
   const navLinks = [
     { href: '/', label: 'หน้าหลัก', icon: Home },
     { href: '/store', label: 'สินค้า', icon: ShoppingBag },
-    { href: '/gpt-script', label: 'GPT สคริปต์ไวรัล', icon: Zap, highlight: true },
     { href: '/contact', label: 'ติดต่อ', icon: Headset },
   ]
 
