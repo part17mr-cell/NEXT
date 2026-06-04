@@ -63,17 +63,19 @@ export function Mascot({ page, size = 180, float = true, className = '', message
         </div>
       )}
 
-      {/* sprite window */}
-      <div
-        style={{
-          width: size,
-          height: size,
-          backgroundImage: 'url(/mascot/page-mascots.png)',
-          backgroundSize: `${COLS * 100}% ${ROWS * 100}%`,
-          backgroundPosition: `${bgX}% ${bgY}%`,
-          backgroundRepeat: 'no-repeat',
-        }}
-      />
+      {/* sprite window — clip ล่าง 18% ที่มี label text */}
+      <div style={{ width: size, height: size * 0.82, overflow: 'hidden' }}>
+        <div
+          style={{
+            width: size,
+            height: size,
+            backgroundImage: 'url(/mascot/page-mascots.png)',
+            backgroundSize: `${COLS * 100}% ${ROWS * 100}%`,
+            backgroundPosition: `${bgX}% ${bgY}%`,
+            backgroundRepeat: 'no-repeat',
+          }}
+        />
+      </div>
     </div>
   )
 
