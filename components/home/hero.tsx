@@ -18,10 +18,10 @@ const fadeUp = (delay = 0) => ({
 
 // ── mini floating product card ─────────────────────────────────────────────
 function MiniCard({
-  name, imageUrl, price, origPrice, rotate = 0, delay = 0,
+  name, image_url, price, origPrice, rotate = 0, delay = 0,
   formatMoney,
 }: {
-  name: string; imageUrl?: string; price: number; origPrice: number
+  name: string; image_url?: string; price: number; origPrice: number
   rotate?: number; delay?: number; formatMoney: (n: number) => string
 }) {
   const pct = origPrice > price ? Math.round((1 - price / origPrice) * 100) : 0
@@ -35,8 +35,8 @@ function MiniCard({
     >
       {/* image */}
       <div className="relative w-full aspect-square bg-gradient-to-br from-primary/15 to-violet-900/20 overflow-hidden">
-        {imageUrl ? (
-          <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
+        {image_url ? (
+          <img src={image_url} alt={name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Package className="w-8 h-8 text-primary/20" />
