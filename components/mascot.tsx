@@ -3,17 +3,20 @@
 import { motion } from 'framer-motion'
 
 /**
- * page-mascots.png layout — 5 cols × 3 rows
- * Row 1: Home | Product | ProductDetail | Cart | Checkout
- * Row 2: OrderTracking | Login | Register | Contact | FAQ
- * Row 3: MemberDashboard | Coupon | Security | Admin | (empty)
+ * page-mascots.png — 5 cols × 3 rows
+ * Row 0: Home(0,0) | Product(1,0) | ProductDetail(2,0) | Cart(3,0) | Checkout(4,0)
+ * Row 1: OrderTracking(0,1) | Login(1,1) | Register(2,1) | Contact(3,1) | FAQ(4,1)
+ * Row 2: MemberDashboard(0,2) | Coupon(1,2) | Security(2,2) | Admin(3,2)
  */
 export type MascotPage =
   | 'home' | 'product' | 'productDetail' | 'cart' | 'checkout'
   | 'orderTracking' | 'login' | 'register' | 'contact' | 'faq'
   | 'dashboard' | 'coupon' | 'security' | 'admin'
 
-const MASCOT_POSITIONS: Record<MascotPage, [number, number]> = {
+const COLS = 5
+const ROWS = 3
+
+const POS: Record<MascotPage, [number, number]> = {
   home:          [0, 0],
   product:       [1, 0],
   productDetail: [2, 0],
@@ -32,61 +35,49 @@ const MASCOT_POSITIONS: Record<MascotPage, [number, number]> = {
 
 interface MascotProps {
   page: MascotPage
-  size?: number       // px, default 200
-  float?: boolean     // floating animation
+  size?: number
+  float?: boolean
   className?: string
-  message?: string    // speech bubble text
+  message?: string
 }
 
-export function Mascot({ page, size = 200, float = true, className = '', message }: MascotProps) {
-  const [col, row] = MASCOT_POSITIONS[page]
-  const cols = 5
-  const rows = 3
+export function Mascot({ page, size = 180, float = true, className = '', message }: MascotProps) {
+  const [col, row] = POS[page]
 
-  // sprite crop via CSS
-  const spriteStyle: React.CSSProperties = {
-    position: 'absolute',
-    width:  `${cols * 100}%`,
-    height: `${rows * 100}%`,
-    left:   `-${col * 100}%`,
-    top:    `-${row * 100}%`,
-    imageRendering: 'auto',
-  }
+  // CSS background-image sprite — แสดงทีละ 1 ตัว
+  const bgX = col === 0 ? 0 : (col / (COLS - 1)) * 100
+  const bgY = row === 0 ? 0 : (row / (ROWS - 1)) * 100
 
-  const wrapper = (
-    <div className={`relative inline-block select-none ${className}`} style={{ width: size, height: size }}>
+  const spriteDiv = (
+    <div className={`relative inline-block select-none ${className}`} style={{ width: size }}>
       {/* speech bubble */}
       {message && (
-        <div
-          className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap
-            px-3 py-1.5 rounded-2xl rounded-bl-none bg-primary text-primary-foreground
-            text-xs font-black shadow-lg shadow-primary/30 z-10"
-        >
-          {message}
-          {/* triangle */}
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0
+        <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap">
+          <div className="px-3 py-1.5 rounded-2xl rounded-bl-none bg-primary text-primary-foreground text-xs font-black shadow-lg shadow-primary/30">
+            {message}
+          </div>
+          <div className="w-0 h-0 ml-4
             border-l-[6px] border-l-transparent
             border-r-[6px] border-r-transparent
-            border-t-[8px] border-t-primary" />
+            border-t-[7px] border-t-primary" />
         </div>
       )}
 
       {/* sprite window */}
       <div
-        className="w-full h-full overflow-hidden"
-        style={{ position: 'relative' }}
-      >
-        <img
-          src="/mascot/page-mascots.png"
-          alt={page}
-          style={spriteStyle}
-          draggable={false}
-        />
-      </div>
+        style={{
+          width: size,
+          height: size,
+          backgroundImage: 'url(/mascot/page-mascots.png)',
+          backgroundSize: `${COLS * 100}% ${ROWS * 100}%`,
+          backgroundPosition: `${bgX}% ${bgY}%`,
+          backgroundRepeat: 'no-repeat',
+        }}
+      />
     </div>
   )
 
-  if (!float) return wrapper
+  if (!float) return spriteDiv
 
   return (
     <motion.div
@@ -94,21 +85,7 @@ export function Mascot({ page, size = 200, float = true, className = '', message
       transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
       style={{ display: 'inline-block' }}
     >
-      {wrapper}
+      {spriteDiv}
     </motion.div>
-  )
-}
-
-/** Full sticker sheet — ใช้เป็น decoration */
-export function MascotSheet({ className = '' }: { className?: string }) {
-  return (
-    <motion.img
-      src="/mascot/mascot-stickers.png"
-      alt="JOB mascot collection"
-      animate={{ y: [0, -8, 0] }}
-      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-      className={`select-none pointer-events-none ${className}`}
-      draggable={false}
-    />
   )
 }
