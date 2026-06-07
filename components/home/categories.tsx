@@ -26,7 +26,7 @@ const CATS = [
 ]
 
 function ProductCard({ product, index }: {
-  product: { id: string; name: string; image_url?: string; price: number; sale_price?: number; badge?: string; sold?: number; rating?: number }
+  product: { id: string; name: string; image_url?: string; price: number; sale_price?: number; badge?: string; sold?: number; rating?: number; download_url?: string }
   index: number
 }) {
   const { formatMoney } = useStore()
@@ -75,12 +75,30 @@ function ProductCard({ product, index }: {
               {isFree ? 'ฟรี!' : formatMoney(price)}
             </span>
           </div>
-          <Link href={`/checkout?product=${encodeURIComponent(product.id)}`}>
-            <button className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-black shadow-lg shadow-primary/25 hover:bg-primary/90 transition-colors">
-              <ShoppingCart className="w-3 h-3" />
-              สั่งซื้อ
-            </button>
-          </Link>
+          {isFree ? (
+            product.download_url ? (
+              <a href={product.download_url} target="_blank" rel="noopener noreferrer">
+                <button className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-[10px] font-black shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 transition-colors">
+                  <Zap className="w-3 h-3" />
+                  รับฟรี
+                </button>
+              </a>
+            ) : (
+              <Link href={`/store`}>
+                <button className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-[10px] font-black shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 transition-colors">
+                  <Zap className="w-3 h-3" />
+                  รับฟรี
+                </button>
+              </Link>
+            )
+          ) : (
+            <Link href={`/checkout?product=${encodeURIComponent(product.id)}`}>
+              <button className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-black shadow-lg shadow-primary/25 hover:bg-primary/90 transition-colors">
+                <ShoppingCart className="w-3 h-3" />
+                สั่งซื้อ
+              </button>
+            </Link>
+          )}
         </div>
       </div>
     </motion.div>

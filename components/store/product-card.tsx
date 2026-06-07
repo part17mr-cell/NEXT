@@ -120,7 +120,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [lightboxImg, setLightboxImg] = useState<string | null>(null)
 
-  const price = product.sale_price || product.price
+  const price = product.sale_price != null ? product.sale_price : product.price
   const hasDiscount = product.price > price
   const isFree = price === 0
   const discountPercent = hasDiscount ? Math.round((1 - price / product.price) * 100) : 0
@@ -640,7 +640,7 @@ function ProductDetailModal({ product, open, onClose }: ProductDetailModalProps)
   const [editingRating, setEditingRating] = useState(5)
   const [editingComment, setEditingComment] = useState('')
 
-  const price = product.sale_price || product.price
+  const price = product.sale_price != null ? product.sale_price : product.price
   const hasDiscount = product.price > price
   const isFree = price === 0
   const discountPercent = hasDiscount ? Math.round((1 - price / product.price) * 100) : 0
