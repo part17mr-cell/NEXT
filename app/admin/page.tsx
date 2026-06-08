@@ -55,6 +55,7 @@ import {
 } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
 import { ImageInput } from '@/components/ui/image-input'
+import { BackgroundManager } from '@/components/admin/background-manager'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -1826,6 +1827,7 @@ function SettingsTab() {
 
   const sections = [
     { id: 'brand', label: 'Brand', icon: Sparkles },
+    { id: 'background', label: 'พื้นหลัง', icon: ImageIcon },
     { id: 'icons', label: 'ไอคอน/รูป', icon: Package },
     { id: 'home', label: 'หน้าแรก', icon: Home },
     { id: 'store', label: 'ร้านค้า', icon: Store },
@@ -1903,6 +1905,14 @@ function SettingsTab() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Background Settings */}
+        {activeSection === 'background' && (
+          <BackgroundManager
+            value={form.background}
+            onChange={bg => setForm(prev => ({ ...prev, background: bg }))}
+          />
         )}
 
         {/* Icons Settings */}

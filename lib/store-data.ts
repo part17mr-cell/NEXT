@@ -94,6 +94,13 @@ export interface StoreSettings {
     domain: string
     accent: string
   }
+  background: {
+    enabled: boolean
+    images: string[]      // image or GIF (URL or data URI)
+    intervalSec: number   // auto-rotate seconds; 0 = no rotation
+    opacity: number       // 0-100 overlay strength of the background
+    blur: number          // px blur applied to background
+  }
   icons: {
     lineIconUrl: string
     cartIconUrl: string
@@ -181,6 +188,13 @@ export const defaultSettings: StoreSettings = {
     faviconUrl: '',
     domain: 'nextthon.store',
     accent: '#6366f1'
+  },
+  background: {
+    enabled: false,
+    images: [],
+    intervalSec: 8,
+    opacity: 18,
+    blur: 2,
   },
   icons: {
     lineIconUrl: '',

@@ -8,6 +8,7 @@ import { Menu, X, Home, ShoppingBag, Headset, UserPlus, LogIn, User, LogOut, Set
 import { useStore } from '@/lib/store-context'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { BrandMark } from '@/components/brand-mark'
 
 export function Navbar() {
   const pathname = usePathname()
@@ -61,7 +62,7 @@ export function Navbar() {
               {settings.brand.logoUrl ? (
                 <img src={settings.brand.logoUrl} alt={settings.brand.storeName} className="w-full h-full object-contain" />
               ) : (
-                <span className="text-xl font-black bg-gradient-to-br from-primary via-violet-400 to-blue-400 bg-clip-text text-transparent leading-none select-none">J</span>
+                <BrandMark className="w-full h-full" />
               )}
             </motion.div>
             <div className="hidden sm:block">
@@ -201,7 +202,7 @@ export function Navbar() {
                       {settings.brand.logoUrl ? (
                         <img src={settings.brand.logoUrl} alt={settings.brand.storeName} className="w-full h-full object-contain" />
                       ) : (
-                        <span className="text-xl font-black bg-gradient-to-br from-primary via-violet-400 to-blue-400 bg-clip-text text-transparent leading-none select-none">J</span>
+                        <BrandMark className="w-full h-full" />
                       )}
                     </div>
                     <div>

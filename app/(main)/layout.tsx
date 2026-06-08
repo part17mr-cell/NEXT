@@ -5,11 +5,13 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { FloatingButtons } from '@/components/floating-buttons'
 import { EditModeProvider, EditModeToggle } from '@/components/edit-mode'
+import { SiteBackground } from '@/components/site-background'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <StoreProvider>
       <EditModeProvider>
+        <SiteBackground />
         <div className="min-h-screen flex flex-col pt-4">
           <Navbar />
           <main className="flex-1">

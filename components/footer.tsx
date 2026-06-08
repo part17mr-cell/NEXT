@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Zap, ExternalLink, Heart } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
+import { BrandMark } from '@/components/brand-mark'
 
 export function Footer() {
   const { settings } = useStore()
@@ -30,9 +31,9 @@ export function Footer() {
             <Link href="/" className="inline-flex items-center gap-3 mb-5 group">
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/40 flex items-center justify-center"
+                className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center"
               >
-                <span className="text-xl font-black bg-gradient-to-br from-primary via-violet-400 to-blue-400 bg-clip-text text-transparent leading-none select-none">J</span>
+                <BrandMark className="w-full h-full" />
               </motion.div>
               <div>
                 <p className="font-display font-bold text-lg text-gradient-static">JOB</p>
