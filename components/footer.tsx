@@ -35,7 +35,7 @@ export function Footer() {
                 <span className="text-xl font-black bg-gradient-to-br from-primary via-violet-400 to-blue-400 bg-clip-text text-transparent leading-none select-none">J</span>
               </motion.div>
               <div>
-                <p className="font-display font-bold text-lg bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">JOB</p>
+                <p className="font-display font-bold text-lg text-gradient-static">JOB</p>
                 <p className="text-xs text-primary font-bold uppercase tracking-wider">DIGITAL STORE</p>
               </div>
             </Link>

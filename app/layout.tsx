@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport = {
-  themeColor: '#7c3aed',
+  themeColor: '#D97757',
   width: 'device-width',
   initialScale: 1,
 }
@@ -55,7 +55,7 @@ export default function RootLayout({
   return (
     <html
       lang="th"
-      className={`dark ${inter.variable} ${ibmPlex.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${ibmPlex.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
       data-scroll-behavior="smooth"
     >
@@ -66,9 +66,10 @@ export default function RootLayout({
           toastOptions={{
             className: 'glass border-border text-foreground',
             style: {
-              background: 'oklch(0.09 0.01 260 / 0.95)',
+              background: 'oklch(1 0 0 / 0.95)',
               backdropFilter: 'blur(20px)',
-              border: '1px solid oklch(0.22 0.01 260)',
+              border: '1px solid oklch(0.90 0.012 70)',
+              color: 'oklch(0.24 0.012 60)',
             }
           }}
           richColors

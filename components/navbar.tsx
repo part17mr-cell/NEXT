@@ -65,7 +65,7 @@ export function Navbar() {
               )}
             </motion.div>
             <div className="hidden sm:block">
-              <p className="font-display font-bold text-base tracking-tight bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">JOB</p>
+              <p className="font-display font-bold text-base tracking-tight text-gradient-static">JOB</p>
               <p className="text-[10px] text-primary font-bold uppercase tracking-widest">DIGITAL STORE</p>
             </div>
           </Link>
