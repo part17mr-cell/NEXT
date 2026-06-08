@@ -112,7 +112,7 @@ function FeaturedCard({
 
         {/* checklist */}
         <div className="space-y-1 mb-4">
-          {['ดาวน์โหลดได้ทันที', 'ใช้งานได้ไม่จำกัด', 'อัปเดตฟรีตลอด'].map(f => (
+          {['ก็อปวางใช้ได้ทันที', 'จ่ายครั้งเดียว ใช้ได้ตลอด', 'อัปเดตฟรีตลอดชีพ'].map(f => (
             <div key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
               <Check className="w-3 h-3 text-emerald-400 shrink-0" />
               {f}
@@ -183,11 +183,13 @@ export function HomeHero() {
 
           {/* ── LEFT ─────────────────────────────────────────────────── */}
           <div className="max-w-lg">
-            {/* kicker */}
+            {/* kicker — social proof (likelihood of achievement) */}
             <motion.div {...fadeUp(0)} className="mb-5">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/25 text-primary text-sm font-bold">
-                <Zap className="w-4 h-4 fill-primary" />
-                สินค้าดิจิทัลพร้อมใช้ ส่งทันที
+                <span className="flex -space-x-0.5">
+                  <Star className="w-4 h-4 fill-primary" />
+                </span>
+                ลูกค้าใช้จริงแล้วกว่า {totalMembers.toLocaleString('th-TH')} คน
               </span>
             </motion.div>
 
@@ -203,11 +205,12 @@ export function HomeHero() {
               </h1>
             </motion.div>
 
-            {/* sub */}
-            <motion.p {...fadeUp(0.12)} className="text-muted-foreground text-base sm:text-lg leading-relaxed mb-8">
-              รวม Prompt, Script, Template และ Workflow<br />
-              สำหรับคนทำคอนเทนต์และงานออนไลน์<br />
-              <span className="text-foreground/70 text-sm">ดาวน์โหลดได้ทันทีหลังชำระเงิน</span>
+            {/* sub — value equation: dream outcome ↑, effort ↓, time delay ↓ */}
+            <motion.p {...fadeUp(0.12)} className="text-muted-foreground text-base sm:text-lg leading-relaxed mb-7">
+              หยุดเริ่มจากศูนย์ — Prompt, Script, Template และ Workflow ที่{' '}
+              <strong className="text-foreground">ก็อปวางใช้ได้ทันที</strong>{' '}
+              งานที่เคยทำเป็นชั่วโมง เหลือแค่ไม่กี่นาที<br />
+              <span className="text-foreground/70 text-sm">ดาวน์โหลดอัตโนมัติทันทีหลังชำระเงิน • จ่ายครั้งเดียว ใช้ได้ตลอด</span>
             </motion.p>
 
             {/* CTAs */}
@@ -225,6 +228,19 @@ export function HomeHero() {
                   ดูวิธีซื้อ
                 </Button>
               </Link>
+            </motion.div>
+
+            {/* risk reversal — lower perceived risk (Hormozi guarantees) */}
+            <motion.div {...fadeUp(0.18)} className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-7 text-sm">
+              <span className="flex items-center gap-1.5 text-foreground/80">
+                <Check className="w-4 h-4 text-emerald-500 shrink-0" /> ดาวน์โหลดทันที 24 ชม.
+              </span>
+              <span className="flex items-center gap-1.5 text-foreground/80">
+                <Check className="w-4 h-4 text-emerald-500 shrink-0" /> จ่ายครั้งเดียว ใช้ตลอด
+              </span>
+              <span className="flex items-center gap-1.5 text-foreground/80">
+                <Shield className="w-4 h-4 text-primary shrink-0" /> มีสินค้าให้ลองฟรี
+              </span>
             </motion.div>
 
             {/* stats */}
@@ -299,10 +315,10 @@ export function HomeHero() {
           className="mt-16 pt-8 border-t border-border/20 grid grid-cols-2 sm:grid-cols-4 gap-4"
         >
           {[
-            { icon: Zap,        label: 'ส่งทันที',             sub: 'ออโต้ 24 ชม.' },
-            { icon: Shield,     label: 'ตรวจสอบออเดอร์ได้',   sub: 'ระบบ real-time' },
-            { icon: Headphones, label: 'มีบริการหลังการขาย', sub: 'ทีมงานพร้อมช่วย' },
-            { icon: Clock,      label: 'ลูกค้าประจำ',          sub: `${totalOrders}+ ออเดอร์` },
+            { icon: Zap,        label: 'ส่งทันทีอัตโนมัติ',   sub: 'ดาวน์โหลดเองได้เลย' },
+            { icon: Shield,     label: 'การันตีของแท้',        sub: 'ไม่ได้ของ คืนเงิน' },
+            { icon: Headphones, label: 'ซัพพอร์ตตัวจริง',      sub: 'ทักได้ตลอด 24 ชม.' },
+            { icon: Clock,      label: 'พิสูจน์แล้ว',          sub: `${totalOrders}+ ออเดอร์` },
           ].map(({ icon: Icon, label, sub }) => (
             <div key={label}
               className="flex flex-col items-center gap-2 py-5 px-3 rounded-2xl border border-border/20 bg-card/20 hover:border-primary/25 hover:bg-primary/5 transition-all text-center"
