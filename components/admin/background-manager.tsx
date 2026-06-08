@@ -1,15 +1,56 @@
 'use client'
 
 import { useRef, useState, useCallback } from 'react'
-import { Upload, X, Plus, Link as LinkIcon, ImageIcon, Film, Power } from 'lucide-react'
+import { Upload, X, Plus, Link as LinkIcon, ImageIcon, Film, Power, Sparkles } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
+import { useStore } from '@/lib/store-context'
 import type { StoreSettings } from '@/lib/store-data'
 
 type BackgroundConfig = StoreSettings['background']
+
+const BASE_HEX: Record<string, string> = { cream: '#F7F3EC', white: '#FFFFFF', dark: '#0A0A12' }
+
+const svgUri = (svg: string) => `data:image/svg+xml,${encodeURIComponent(svg.replace(/\s+/g, ' ').trim())}`
+
+/** On-brand background presets generated from the current accent + base colors. */
+function buildPresets(accent: string, base: string) {
+  const mesh = `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'>
+    <defs><filter id='b' x='-30%' y='-30%' width='160%' height='160%'><feGaussianBlur stdDeviation='90'/></filter></defs>
+    <rect width='1200' height='800' fill='${base}'/>
+    <g filter='url(#b)'>
+      <circle cx='210' cy='170' r='270' fill='${accent}' opacity='0.85'/>
+      <circle cx='1010' cy='120' r='230' fill='${accent}' opacity='0.55'/>
+      <circle cx='670' cy='760' r='320' fill='${accent}' opacity='0.45'/>
+    </g>
+  </svg>`
+
+  const gradient = `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'>
+    <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0' stop-color='${accent}' stop-opacity='0.9'/>
+      <stop offset='0.55' stop-color='${base}'/>
+      <stop offset='1' stop-color='${accent}' stop-opacity='0.5'/>
+    </linearGradient></defs>
+    <rect width='1200' height='800' fill='url(#g)'/>
+  </svg>`
+
+  const dots = `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'>
+    <rect width='1200' height='800' fill='${base}'/>
+    <defs><pattern id='d' width='44' height='44' patternUnits='userSpaceOnUse'>
+      <circle cx='6' cy='6' r='4' fill='${accent}' opacity='0.9'/>
+    </pattern></defs>
+    <rect width='1200' height='800' fill='url(#d)'/>
+  </svg>`
+
+  return [
+    { id: 'mesh', label: 'ออโรร่า', uri: svgUri(mesh), opacity: 55, blur: 0 },
+    { id: 'gradient', label: 'ไล่เฉด', uri: svgUri(gradient), opacity: 65, blur: 0 },
+    { id: 'dots', label: 'จุดไล่', uri: svgUri(dots), opacity: 45, blur: 0 },
+  ]
+}
 
 /** Compress a non-animated image to JPEG (max 1280px) targeting < ~140 KB. */
 function compressImage(dataUrl: string): Promise<string> {
@@ -46,9 +87,11 @@ export function BackgroundManager({
   value: BackgroundConfig
   onChange: (next: BackgroundConfig) => void
 }) {
+  const { settings } = useStore()
   const fileRef = useRef<HTMLInputElement>(null)
   const [urlDraft, setUrlDraft] = useState('')
   const images = value?.images ?? []
+  const presets = buildPresets(settings.theme?.primary || '#D97757', BASE_HEX[settings.theme?.base ?? 'cream'] ?? BASE_HEX.cream)
 
   const patch = useCallback(
     (p: Partial<BackgroundConfig>) => onChange({ ...value, ...p }),
@@ -151,6 +194,32 @@ export function BackgroundManager({
             <Plus className="w-4 h-4" />
           </Button>
         </div>
+      </div>
+
+      {/* On-brand presets (match the chosen theme color) */}
+      <div className="space-y-2">
+        <Label className="text-sm font-semibold flex items-center gap-1.5">
+          <Sparkles className="w-4 h-4 text-primary" />
+          พื้นหลังสำเร็จรูป (เข้ากับธีมอัตโนมัติ)
+        </Label>
+        <div className="grid grid-cols-3 gap-3">
+          {presets.map(p => {
+            const active = images.length === 1 && images[0] === p.uri
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onChange({ ...value, enabled: true, images: [p.uri], opacity: p.opacity, blur: p.blur })}
+                className={`relative rounded-xl overflow-hidden border-2 transition-all ${active ? 'border-primary shadow-md' : 'border-border hover:border-primary/40'}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.uri} alt={p.label} className="w-full h-16 object-cover" />
+                <span className="block text-[11px] font-bold py-1 bg-card">{p.label}</span>
+              </button>
+            )
+          })}
+        </div>
+        <p className="text-[11px] text-muted-foreground">สร้างจากสีหลักของคุณ — เปลี่ยนสีในแท็บ &quot;สีเว็บ&quot; แล้วกดพรีเซ็ตใหม่เพื่ออัปเดตสี</p>
       </div>
 
       {/* Thumbnail grid */}
