@@ -87,28 +87,30 @@
     @apply border-border outline-ring/50;
   }
   html {
+    /* base cream + soft warm glows live on html so the (transparent) body lets
+       the admin-controlled SiteBackground layer (z-index:-10) show through */
     @apply bg-background;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-  }
-  html[data-scroll-behavior="smooth"] {
-    scroll-behavior: smooth;
-  }
-  body {
-    @apply bg-background text-foreground min-h-screen;
-    /* soft warm coral/peach glows on cream */
     background-image:
       radial-gradient(1000px 600px at 50% -220px, oklch(0.78 0.13 55 / 0.18), transparent 70%),
       radial-gradient(720px 520px at -10% 18%, oklch(0.74 0.14 35 / 0.10), transparent 60%),
       radial-gradient(640px 460px at 110% 12%, oklch(0.82 0.12 80 / 0.10), transparent 55%);
     background-attachment: fixed;
   }
+  html[data-scroll-behavior="smooth"] {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply text-foreground min-h-screen;
+    background: transparent;
+  }
   body::before {
     content: "";
     position: fixed;
     inset: 0;
-    z-index: -2;
+    z-index: -3;
     background-image:
       linear-gradient(oklch(0.55 0.05 60 / 0.04) 1px, transparent 1px),
       linear-gradient(90deg, oklch(0.55 0.05 60 / 0.035) 1px, transparent 1px);

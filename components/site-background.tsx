@@ -52,8 +52,8 @@ export function SiteBackground() {
           }}
         />
       </AnimatePresence>
-      {/* readability veil so foreground text stays legible on busy images */}
-      <div className="absolute inset-0 bg-background/40" />
+      {/* light readability veil so foreground text stays legible on busy images */}
+      <div className="absolute inset-0 bg-background/20" />
     </div>
   )
 }

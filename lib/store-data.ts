@@ -193,7 +193,7 @@ export const defaultSettings: StoreSettings = {
     enabled: false,
     images: [],
     intervalSec: 8,
-    opacity: 18,
+    opacity: 35,
     blur: 2,
   },
   icons: {
