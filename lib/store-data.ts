@@ -182,12 +182,12 @@ export interface StoreSettings {
 
 export const defaultSettings: StoreSettings = {
   brand: {
-    storeName: 'NEXT THON',
-    tagline: 'Digital Store',
+    storeName: 'JOB Digital Store',
+    tagline: 'สินค้าดิจิทัลพร้อมใช้',
     logoUrl: '',
     faviconUrl: '',
-    domain: 'nextthon.store',
-    accent: '#6366f1'
+    domain: 'job.store',
+    accent: '#D97757'
   },
   background: {
     enabled: false,
@@ -229,23 +229,23 @@ export const defaultSettings: StoreSettings = {
   },
   contact: {
     lineId: '@nextthon',
-    lineUrl: 'https://lin.ee/nextthon',
-    email: 'support@nextthon.store',
+    lineUrl: 'https://lin.ee/',
+    email: 'support@job.store',
     phone: '-',
-    title: 'ติดต่อ NEXT THON',
+    title: 'ติดต่อ JOB Digital Store',
     lead: 'ต้องการความช่วยเหลือ? ส่งเลขออเดอร์และสลิปให้แอดมินตรวจสอบได้ทันที'
   },
   payment: {
     bankName: 'ธนาคาร/วอลเล็ต',
-    accountName: 'NEXT THON STORE',
+    accountName: 'JOB DIGITAL STORE',
     accountNumber: '000-000-0000',
     qrImageUrl: '',
     note: 'โอนแล้วแนบสลิปในหน้า Checkout',
     discordWebhook: ''
   },
   pages: {
-    aboutTitle: 'NEXT THON - ร้านดิจิทัลระบบออโต้',
-    aboutLead: 'รวมสินค้าและบริการดิจิทัล เช่น FiveM, Account, Free Fire, Roblox, Unban All และบริการเสริมอื่น ๆ ในเว็บเดียว',
+    aboutTitle: 'JOB — ร้านสินค้าดิจิทัลสำหรับครีเอเตอร์',
+    aboutLead: 'รวม Prompt, Script, Template และ Workflow พร้อมใช้ สำหรับคนทำคอนเทนต์และงานออนไลน์ ดาวน์โหลดทันทีหลังชำระเงิน',
     privacyTitle: 'นโยบายข้อมูลส่วนบุคคล',
     privacyLead: 'เก็บข้อมูลเท่าที่จำเป็นเพื่อยืนยันออเดอร์ ตรวจสอบการชำระเงิน ส่งมอบสินค้า และให้บริการหลังการขาย',
     refundTitle: 'นโยบายการคืนเงิน',

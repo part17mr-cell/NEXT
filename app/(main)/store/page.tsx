@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Store, Search, ArrowLeft, Loader2, Sparkles, X, Grid3X3, LayoutGrid, Package, SlidersHorizontal, Check, User, Car, Boxes, Flame, Zap, Shield, Monitor, Gamepad2, MessageSquare, FileText, LayoutTemplate, GitBranch } from 'lucide-react'
+import { Store, Search, ArrowLeft, Loader2, Sparkles, X, Grid3X3, LayoutGrid, Package, SlidersHorizontal, Check, User, Car, Boxes, Flame, Zap, Shield, Monitor, Gamepad2, MessageSquare, FileText, LayoutTemplate, GitBranch, Bot } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
 import { ProductCard } from '@/components/store/product-card'
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const catTabConfig: Record<string, { Icon: LucideIcon; active: string; dot: string }> = {
   // Content / AI business categories
+  'AI':          { Icon: Bot,            active: 'bg-primary text-primary-foreground border-primary', dot: 'bg-primary' },
   'Prompt':      { Icon: MessageSquare,  active: 'bg-violet-500 text-white border-violet-500',   dot: 'bg-violet-400' },
   'Script':      { Icon: FileText,       active: 'bg-blue-500 text-white border-blue-500',        dot: 'bg-blue-400' },
   'Template':    { Icon: LayoutTemplate, active: 'bg-emerald-500 text-white border-emerald-500',  dot: 'bg-emerald-400' },

@@ -929,7 +929,7 @@ function ProductsTab() {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <p className="font-bold text-primary hidden sm:block">{formatMoney(product.sale_price || product.price)}</p>
+            <p className="font-bold text-primary hidden sm:block">{(product.sale_price ?? product.price) === 0 ? 'ฟรี' : formatMoney(product.sale_price ?? product.price)}</p>
             <Button variant="ghost" size="icon" onClick={() => toggleProduct(product.id)} title={product.is_active ? 'ปิดขาย' : 'เปิดขาย'} className={product.is_active ? 'text-emerald-500' : 'text-muted-foreground'}>
               {product.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
             </Button>
