@@ -57,6 +57,7 @@ import { useStore } from '@/lib/store-context'
 import { ImageInput } from '@/components/ui/image-input'
 import { BackgroundManager } from '@/components/admin/background-manager'
 import { ImageOptimizer } from '@/components/admin/image-optimizer'
+import { ThemeCustomizer } from '@/components/admin/theme-customizer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -1828,6 +1829,7 @@ function SettingsTab() {
 
   const sections = [
     { id: 'brand', label: 'Brand', icon: Sparkles },
+    { id: 'theme', label: 'สีเว็บ', icon: Palette },
     { id: 'background', label: 'พื้นหลัง', icon: ImageIcon },
     { id: 'icons', label: 'ไอคอน/รูป', icon: Package },
     { id: 'home', label: 'หน้าแรก', icon: Home },
@@ -1906,6 +1908,14 @@ function SettingsTab() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Theme / Colors */}
+        {activeSection === 'theme' && (
+          <ThemeCustomizer
+            value={form.theme}
+            onChange={th => setForm(prev => ({ ...prev, theme: th }))}
+          />
         )}
 
         {/* Background Settings */}

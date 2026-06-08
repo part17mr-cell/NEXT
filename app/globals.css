@@ -131,13 +131,13 @@
 @layer utilities {
   .text-balance { text-wrap: balance; }
 
-  /* animated warm gradient text: orange → coral → amber */
+  /* animated gradient text — follows the chosen accent color */
   .text-gradient {
     background-image: linear-gradient(100deg,
-      oklch(0.66 0.15 48),
-      oklch(0.62 0.17 30),
-      oklch(0.74 0.14 78),
-      oklch(0.66 0.15 48));
+      color-mix(in oklab, var(--primary), white 22%),
+      var(--primary),
+      color-mix(in oklab, var(--primary), black 14%),
+      color-mix(in oklab, var(--primary), white 22%));
     background-size: 250% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -145,7 +145,10 @@
     animation: gradient-pan 6s linear infinite;
   }
   .text-gradient-static {
-    background-image: linear-gradient(100deg, oklch(0.66 0.15 48), oklch(0.62 0.17 30), oklch(0.74 0.14 78));
+    background-image: linear-gradient(100deg,
+      color-mix(in oklab, var(--primary), white 18%),
+      var(--primary),
+      color-mix(in oklab, var(--primary), black 12%));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

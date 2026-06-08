@@ -101,6 +101,10 @@ export interface StoreSettings {
     opacity: number       // 0-100 overlay strength of the background
     blur: number          // px blur applied to background
   }
+  theme: {
+    base: 'cream' | 'white' | 'dark'   // base palette (bg/text/surfaces)
+    primary: string                    // accent color (hex)
+  }
   icons: {
     lineIconUrl: string
     cartIconUrl: string
@@ -195,6 +199,10 @@ export const defaultSettings: StoreSettings = {
     intervalSec: 8,
     opacity: 35,
     blur: 2,
+  },
+  theme: {
+    base: 'cream',
+    primary: '#D97757',
   },
   icons: {
     lineIconUrl: '',
