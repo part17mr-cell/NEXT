@@ -194,7 +194,7 @@ export function HomeHero() {
             {/* headline */}
             <motion.div {...fadeUp(0.06)}>
               <h1 className="font-black leading-[1.0] tracking-tight mb-3">
-                <span className="block text-7xl sm:text-8xl lg:text-[5.5rem] bg-gradient-to-r from-primary via-violet-400 to-blue-400 bg-clip-text text-transparent">
+                <span className="block text-7xl sm:text-8xl lg:text-[5.5rem] text-gradient">
                   จบงานไว
                 </span>
                 <span className="block text-3xl sm:text-4xl text-foreground mt-2">
@@ -248,9 +248,10 @@ export function HomeHero() {
             transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="relative flex justify-center items-center min-h-[480px]"
           >
-            {/* purple glow */}
+            {/* aurora + glow graphic */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-80 h-80 bg-primary/12 rounded-full blur-[80px]" />
+              <div className="w-80 h-80 aurora-blob opacity-30 rounded-full" />
+              <div className="absolute w-72 h-72 bg-primary/10 rounded-full blur-[80px]" />
             </div>
 
             {/* featured center card */}

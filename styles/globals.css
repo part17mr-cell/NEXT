@@ -137,3 +137,74 @@
 .glass-strong { background: oklch(0.10 0.03 268 / 0.95); backdrop-filter: blur(24px); }
 /* card shine */
 .card-shine { background-image: linear-gradient(135deg, oklch(1 0 0 / 0.02) 0%, transparent 50%); }
+
+/* ── Graphic helpers (TikTok-style vibrant accents) ───────────────────────── */
+
+/* animated tri-tone gradient text: violet → pink → sky */
+.text-gradient {
+  background-image: linear-gradient(100deg,
+    oklch(0.72 0.20 300),
+    oklch(0.70 0.21 350),
+    oklch(0.72 0.17 240),
+    oklch(0.72 0.20 300));
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-pan 6s linear infinite;
+}
+.text-gradient-static {
+  background-image: linear-gradient(100deg, oklch(0.72 0.20 300), oklch(0.70 0.21 350), oklch(0.72 0.17 240));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@keyframes gradient-pan {
+  to { background-position: 250% center; }
+}
+
+/* soft conic/aurora blob used behind sections */
+.aurora-blob {
+  background: conic-gradient(from 180deg at 50% 50%,
+    oklch(0.55 0.27 292 / 0.5),
+    oklch(0.62 0.24 350 / 0.4),
+    oklch(0.60 0.20 240 / 0.45),
+    oklch(0.55 0.27 292 / 0.5));
+  filter: blur(90px);
+  animation: aurora-spin 18s linear infinite;
+}
+@keyframes aurora-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* gradient ring border (wraps a card) */
+.gradient-ring {
+  position: relative;
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    linear-gradient(135deg, oklch(0.55 0.27 292 / 0.7), oklch(0.62 0.24 350 / 0.5), oklch(0.60 0.20 240 / 0.6)) border-box;
+  border: 1.5px solid transparent;
+}
+
+/* slow float for decorative graphics */
+.animate-float-slow { animation: float-slow 7s ease-in-out infinite; }
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+/* subtle sheen sweep on hover wrappers */
+.sheen { position: relative; overflow: hidden; }
+.sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%);
+  background: linear-gradient(110deg, transparent 30%, oklch(1 0 0 / 0.08) 50%, transparent 70%);
+  transition: transform 0.7s ease;
+}
+.sheen:hover::after { transform: translateX(120%); }
+
+@media (prefers-reduced-motion: reduce) {
+  .text-gradient, .aurora-blob, .animate-float-slow { animation: none; }
+}

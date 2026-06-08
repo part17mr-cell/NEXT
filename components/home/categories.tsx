@@ -126,8 +126,8 @@ export function HomeCategories() {
                 <TrendingUp className="w-4 h-4 text-primary" />
                 <span className="text-xs font-bold text-primary uppercase tracking-widest">แนะนำ</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black">สินค้าแนะนำ</h2>
-              <p className="text-sm text-muted-foreground mt-1">ช่วยพัฒนาสินค้าของคุณได้ง่ายขึ้น ลองดูสินค้าที่เราคัดเลือกให้</p>
+              <h2 className="text-3xl sm:text-4xl font-black">สินค้า<span className="text-gradient">แนะนำ</span></h2>
+              <p className="text-sm text-muted-foreground mt-1">คัดมาแล้วว่าปังจริง ขายดีสุดในร้าน</p>
             </div>
             <Link href="/store">
               <button className="hidden sm:flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline">
@@ -149,10 +149,15 @@ export function HomeCategories() {
       </section>
 
       {/* หมวดหมู่สินค้า */}
-      <section className="py-12 px-4 bg-card/20 border-y border-border/30">
-        <div className="max-w-6xl mx-auto">
+      <section className="relative py-14 px-4 bg-card/20 border-y border-border/30 overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] aurora-blob opacity-15 rounded-full pointer-events-none" />
+        <div className="relative max-w-6xl mx-auto">
           <motion.div {...fade()} className="mb-8 text-center">
-            <h2 className="text-2xl sm:text-3xl font-black mb-2">หมวดหมู่สินค้า</h2>
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-bold mb-3">
+              <Package className="w-3.5 h-3.5" />
+              หมวดหมู่
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-black mb-2">เลือก<span className="text-gradient">หมวดที่ใช่</span></h2>
             <p className="text-sm text-muted-foreground">เลือกประเภทสินค้าที่เหมาะกับงานของคุณ</p>
           </motion.div>
 
