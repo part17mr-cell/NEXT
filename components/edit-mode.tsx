@@ -355,7 +355,7 @@ function ProductsEditor({ products, onUpdate }: { products: Product[]; onUpdate:
             <span className="text-[10px] text-muted-foreground w-5">{index + 1}</span>
             <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${product.is_active ? 'bg-emerald-500' : 'bg-muted-foreground/50'}`} />
             <span className="text-xs font-medium flex-1 truncate">{product.name}</span>
-            <span className="text-[10px] text-primary font-semibold">{product.sale_price || product.price}฿</span>
+            <span className="text-[10px] text-primary font-semibold">{(product.sale_price ?? product.price) === 0 ? 'ฟรี' : `${product.sale_price ?? product.price}฿`}</span>
             <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${expandedId === product.id ? 'rotate-180' : ''}`} />
           </div>
 

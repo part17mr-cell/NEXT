@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Store, Search, ArrowLeft, Loader2, Sparkles, X, Grid3X3, LayoutGrid, Package, SlidersHorizontal, Check, User, Car, Boxes, Flame, Zap, Shield, Monitor, Gamepad2 } from 'lucide-react'
+import { Store, Search, ArrowLeft, Loader2, Sparkles, X, Grid3X3, LayoutGrid, Package, SlidersHorizontal, Check, User, Car, Boxes, Flame, Zap, Shield, Monitor, Gamepad2, MessageSquare, FileText, LayoutTemplate, GitBranch } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
 import { ProductCard } from '@/components/store/product-card'
@@ -13,6 +13,13 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const catTabConfig: Record<string, { Icon: LucideIcon; active: string; dot: string }> = {
+  // Content / AI business categories
+  'Prompt':      { Icon: MessageSquare,  active: 'bg-violet-500 text-white border-violet-500',   dot: 'bg-violet-400' },
+  'Script':      { Icon: FileText,       active: 'bg-blue-500 text-white border-blue-500',        dot: 'bg-blue-400' },
+  'Template':    { Icon: LayoutTemplate, active: 'bg-emerald-500 text-white border-emerald-500',  dot: 'bg-emerald-400' },
+  'Workflow':    { Icon: GitBranch,      active: 'bg-orange-500 text-white border-orange-500',    dot: 'bg-orange-400' },
+  'Content Kit': { Icon: Package,        active: 'bg-pink-500 text-white border-pink-500',        dot: 'bg-pink-400' },
+  // Legacy / gaming categories (kept for backward compatibility)
   'ACCOUNT':   { Icon: User,    active: 'bg-blue-500 text-white border-blue-500',      dot: 'bg-blue-400' },
   'FIVEM':     { Icon: Car,     active: 'bg-violet-500 text-white border-violet-500',   dot: 'bg-violet-400' },
   'ROBLOX':    { Icon: Boxes,   active: 'bg-red-500 text-white border-red-500',         dot: 'bg-red-400' },
@@ -64,10 +71,10 @@ function StoreContent() {
     
     switch (sort) {
       case 'priceLow':
-        list.sort((a, b) => (a.sale_price || a.price) - (b.sale_price || b.price))
+        list.sort((a, b) => (a.sale_price ?? a.price) - (b.sale_price ?? b.price))
         break
       case 'priceHigh':
-        list.sort((a, b) => (b.sale_price || b.price) - (a.sale_price || a.price))
+        list.sort((a, b) => (b.sale_price ?? b.price) - (a.sale_price ?? a.price))
         break
       case 'name':
         list.sort((a, b) => a.name.localeCompare(b.name, 'th'))
