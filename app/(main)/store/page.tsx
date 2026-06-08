@@ -146,23 +146,23 @@ function StoreContent() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="sticky top-16 z-30 -mx-4 px-4 py-4 bg-background/80 backdrop-blur-xl border-y border-border/30 mb-6"
+            className="sticky top-16 z-30 mb-6"
           >
-            <div className="flex flex-col gap-3">
+            <div className="rounded-2xl border border-border bg-card/85 backdrop-blur-xl shadow-sm shadow-black/[0.04] p-2.5 sm:p-3 space-y-3">
               {/* Search + Sort + Grid row */}
-              <div className="flex gap-3">
+              <div className="flex gap-2.5">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
                   <Input
-                    placeholder="ค้นหาสินค้า..."
+                    placeholder="ค้นหาสินค้าที่ต้องการ..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="pl-10 bg-card border-border/50 h-11 rounded-xl"
+                    className="pl-10 h-11 rounded-xl bg-secondary/50 border-transparent shadow-none focus-visible:bg-card focus-visible:border-primary/40 transition-colors"
                   />
                   {search && (
                     <button
                       onClick={() => setSearch('')}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -170,8 +170,8 @@ function StoreContent() {
                 </div>
 
                 <Select value={sort} onValueChange={setSort}>
-                  <SelectTrigger className="w-[130px] bg-card border-border/50 h-11 rounded-xl shrink-0">
-                    <SlidersHorizontal className="w-4 h-4 mr-2 text-muted-foreground shrink-0" />
+                  <SelectTrigger className="w-[120px] sm:w-[148px] h-11 rounded-xl bg-secondary/50 border-transparent shadow-none shrink-0 font-medium">
+                    <SlidersHorizontal className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" />
                     <SelectValue placeholder="เรียงตาม" />
                   </SelectTrigger>
                   <SelectContent>
@@ -182,17 +182,19 @@ function StoreContent() {
                   </SelectContent>
                 </Select>
 
-                {/* Grid Size Toggle */}
-                <div className="hidden sm:flex border border-border/50 rounded-xl overflow-hidden bg-card shrink-0">
+                {/* Grid Size Toggle — segmented control */}
+                <div className="hidden sm:flex items-center gap-1 p-1 rounded-xl bg-secondary/50 shrink-0">
                   <button
                     onClick={() => setGridSize('small')}
-                    className={`p-2.5 transition-colors ${gridSize === 'small' ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'}`}
+                    aria-label="กริดเล็ก"
+                    className={`p-2 rounded-lg transition-all ${gridSize === 'small' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                   >
                     <Grid3X3 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setGridSize('large')}
-                    className={`p-2.5 transition-colors ${gridSize === 'large' ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'}`}
+                    aria-label="กริดใหญ่"
+                    className={`p-2 rounded-lg transition-all ${gridSize === 'large' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                   >
                     <LayoutGrid className="w-4 h-4" />
                   </button>
@@ -200,7 +202,7 @@ function StoreContent() {
               </div>
 
               {/* Category Tab Pills */}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 border-t border-border/60 pt-3">
                 {(['all', ...categories] as string[]).map(cat => {
                   const cfg = catTabConfig[cat]
                   const isActive = category === cat
@@ -208,20 +210,20 @@ function StoreContent() {
                     <button
                       key={cat}
                       onClick={() => setCategory(cat)}
-                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all duration-200 ${
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
                         isActive
-                          ? (cfg?.active || 'bg-primary text-white border-primary') + ' shadow-md'
-                          : 'bg-card border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
+                          ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/30'
+                          : 'bg-secondary/60 text-muted-foreground hover:text-foreground hover:bg-secondary'
                       }`}
                     >
                       {cat === 'all' ? (
                         <>
-                          <Sparkles className="w-3 h-3" />
+                          <Sparkles className="w-3.5 h-3.5" />
                           ทุกหมวด
                         </>
                       ) : cfg ? (
                         <>
-                          <cfg.Icon className="w-3 h-3" />
+                          <cfg.Icon className="w-3.5 h-3.5" />
                           {cat}
                         </>
                       ) : cat}
