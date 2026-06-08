@@ -13,12 +13,19 @@ interface ImageInputProps {
   previewHeight?: string
 }
 
-/** Compress an image data-URL to JPEG at max 1024px, 80% quality (~100-300 KB result) */
+/**
+ * Compress an image data-URL down to a small JPEG so the synced store stays
+ * under Upstash's ~1 MB request limit. Targets max 800px on the long edge and
+ * steps quality down until the result is under ~90 KB (typical: 30-80 KB).
+ */
 function compressImage(dataUrl: string): Promise<string> {
+  const TARGET_BYTES = 90_000
+  const estimateBytes = (d: string) => Math.ceil((d.length - (d.indexOf(',') + 1)) * 0.75)
+
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
-      const MAX = 1024
+      const MAX = 800
       const ratio = Math.min(MAX / img.width, MAX / img.height, 1)
       const w = Math.round(img.width * ratio)
       const h = Math.round(img.height * ratio)
@@ -28,7 +35,14 @@ function compressImage(dataUrl: string): Promise<string> {
       const ctx = canvas.getContext('2d')
       if (!ctx) { resolve(dataUrl); return }
       ctx.drawImage(img, 0, 0, w, h)
-      resolve(canvas.toDataURL('image/jpeg', 0.80))
+
+      let quality = 0.78
+      let out = canvas.toDataURL('image/jpeg', quality)
+      while (estimateBytes(out) > TARGET_BYTES && quality > 0.4) {
+        quality -= 0.1
+        out = canvas.toDataURL('image/jpeg', quality)
+      }
+      resolve(out)
     }
     img.onerror = reject
     img.src = dataUrl

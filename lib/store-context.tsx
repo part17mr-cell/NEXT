@@ -259,15 +259,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const scheduleServerSync = useCallback(() => {
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
     setSyncStatus('syncing')
-    syncTimerRef.current = setTimeout(() => {
-      fetch('/api/store-sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(serverStateRef.current),
-      }).then(r => {
-        if (r.ok) { setSyncStatus('ok'); setLastSyncedAt(new Date()) }
-        else setSyncStatus('error')
-      }).catch(() => setSyncStatus('error'))
+    syncTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/store-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(serverStateRef.current),
+        })
+        if (res.ok) {
+          setSyncStatus('ok')
+          setLastSyncedAt(new Date())
+          return
+        }
+        setSyncStatus('error')
+        // Surface the actionable reason (esp. oversized image payloads)
+        const data = await res.json().catch(() => null)
+        if (res.status === 413 || data?.error === 'payload_too_large') {
+          toast.error('ซิงค์ไม่สำเร็จ: รูปสินค้ารวมกันใหญ่เกิน 1MB — ลองลดจำนวนรูป หรือใช้ลิงก์รูปแทนการอัปโหลด')
+        } else if (res.status === 503) {
+          toast.error('ซิงค์ไม่สำเร็จ: ยังไม่ได้ตั้งค่า Redis บนเซิร์ฟเวอร์')
+        } else {
+          toast.error('ซิงค์ขึ้นเซิร์ฟเวอร์ไม่สำเร็จ')
+        }
+      } catch {
+        setSyncStatus('error')
+      }
     }, 400)
   }, [])
 
