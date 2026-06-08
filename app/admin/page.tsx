@@ -56,6 +56,7 @@ import {
 import { useStore } from '@/lib/store-context'
 import { ImageInput } from '@/components/ui/image-input'
 import { BackgroundManager } from '@/components/admin/background-manager'
+import { ImageOptimizer } from '@/components/admin/image-optimizer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -1909,10 +1910,13 @@ function SettingsTab() {
 
         {/* Background Settings */}
         {activeSection === 'background' && (
-          <BackgroundManager
-            value={form.background}
-            onChange={bg => setForm(prev => ({ ...prev, background: bg }))}
-          />
+          <div className="space-y-6">
+            <ImageOptimizer />
+            <BackgroundManager
+              value={form.background}
+              onChange={bg => setForm(prev => ({ ...prev, background: bg }))}
+            />
+          </div>
         )}
 
         {/* Icons Settings */}
