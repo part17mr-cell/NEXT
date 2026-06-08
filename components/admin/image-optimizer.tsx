@@ -47,7 +47,7 @@ export function ImageOptimizer() {
     } catch { return 0 }
   }, [settings, products, orders, members])
 
-  const over = sizeKB > 1000
+  const over = sizeKB > 3000
 
   const handleOptimize = async () => {
     setRunning(true)
@@ -86,12 +86,11 @@ export function ImageOptimizer() {
         <div className="text-sm">
           <p className="font-semibold">
             ขนาดข้อมูลที่ต้องซิงค์ตอนนี้: <span className={over ? 'text-red-500' : 'text-emerald-500'}>{sizeKB.toLocaleString()} KB</span>
-            <span className="text-muted-foreground"> / 1,000 KB</span>
           </p>
           <p className="text-muted-foreground text-xs mt-0.5">
             {over
-              ? 'เกินลิมิต — นี่คือสาเหตุที่ซิงค์ล้มเหลว กดปุ่มด้านล่างเพื่อบีบอัดรูปให้เล็กลง'
-              : 'อยู่ในเกณฑ์ปกติ ซิงค์ได้'}
+              ? 'ข้อมูลใหญ่มาก — ระบบยังซิงค์ได้ (แบ่งชิ้นอัตโนมัติ) แต่จะเร็วขึ้นถ้าบีบอัดรูปให้เล็กลง'
+              : 'ขนาดกำลังดี ซิงค์ได้ลื่น'}
           </p>
         </div>
       </div>
@@ -111,7 +110,7 @@ export function ImageOptimizer() {
       {over && !running && (
         <p className="text-xs text-amber-500 flex items-center gap-1.5">
           <AlertTriangle className="w-3.5 h-3.5" />
-          แนะนำให้กดบีบอัดก่อน แล้วค่อยบันทึกการตั้งค่า/พื้นหลัง
+          ข้อมูลใหญ่ — บีบอัดก่อนจะช่วยให้เซฟ/โหลดไวขึ้น
         </p>
       )}
     </div>
