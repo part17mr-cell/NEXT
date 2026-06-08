@@ -52,8 +52,13 @@ export function SiteBackground() {
           }}
         />
       </AnimatePresence>
-      {/* light readability veil so foreground text stays legible on busy images */}
-      <div className="absolute inset-0 bg-background/20" />
+      {/* gradient readability veil — keeps text crisp, makes the image feel intentional */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background/45 via-background/20 to-background/55" />
+      {/* soft vignette fading edges to the cream base for a premium, framed look */}
+      <div
+        className="absolute inset-0"
+        style={{ background: 'radial-gradient(130% 90% at 50% 0%, transparent 35%, var(--background) 100%)' }}
+      />
     </div>
   )
 }

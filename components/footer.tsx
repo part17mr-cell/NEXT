@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Zap, ExternalLink, Heart } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
-import { BrandMark } from '@/components/brand-mark'
 
 export function Footer() {
   const { settings } = useStore()
@@ -33,7 +32,7 @@ export function Footer() {
                 whileHover={{ scale: 1.05 }}
                 className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center"
               >
-                <BrandMark className="w-full h-full" />
+                <img src="/logo.png" alt={settings.brand.storeName} className="w-full h-full object-cover" />
               </motion.div>
               <div>
                 <p className="font-display font-bold text-lg text-gradient-static">JOB</p>
