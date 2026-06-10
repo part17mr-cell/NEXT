@@ -31,7 +31,7 @@ function MiniCard({
       animate={{ y: [0, -8, 0] }}
       transition={{ duration: 3 + delay, repeat: Infinity, ease: 'easeInOut', delay }}
       style={{ rotate }}
-      className="w-32 rounded-2xl border border-primary/20 bg-card/80 backdrop-blur-sm shadow-xl shadow-black/50 overflow-hidden"
+      className="w-32 rounded-2xl border border-primary/20 bg-card shadow-xl shadow-black/20 overflow-hidden will-change-transform"
     >
       {/* image */}
       <div className="relative w-full aspect-square bg-gradient-to-br from-primary/15 to-violet-900/20 overflow-hidden">
@@ -72,7 +72,7 @@ function FeaturedCard({
     <motion.div
       animate={{ y: [0, -10, 0] }}
       transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-      className="relative w-72 rounded-3xl overflow-hidden border-2 border-primary/50 bg-card/90 backdrop-blur-md shadow-2xl shadow-primary/25"
+      className="relative w-72 rounded-3xl overflow-hidden border-2 border-primary/50 bg-card shadow-2xl shadow-primary/25 will-change-transform"
       style={{ boxShadow: '0 0 40px oklch(0.55 0.27 292 / 0.2), 0 25px 50px rgb(0 0 0 / 0.5)' }}
     >
       {/* BEST SELLER badge */}
