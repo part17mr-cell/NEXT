@@ -16,3 +16,5 @@ node_modules
 
 # Server-side store data (user content, not source code)
 data/store.json
+# data backups (contain customer PII — never commit)
+backup/
