@@ -1,21 +1,30 @@
 import { NextResponse } from 'next/server'
 import { getRedis, readStore, writeStore } from '../_store-redis'
 
-export async function GET() {
+export async function GET(request: Request) {
+  const light = new URL(request.url).searchParams.get('light')
   const redis = getRedis()
   if (!redis) {
     return NextResponse.json({}, {
-      headers: { 'Cache-Control': 's-maxage=20, stale-while-revalidate=30' },
+      headers: { 'Cache-Control': 's-maxage=30, stale-while-revalidate=120' },
     })
   }
   try {
-    const data = await readStore(redis)
+    const data = (await readStore(redis)) as Record<string, unknown> | null
+    // Light response = only orders/members (tiny). Keeps the live polls from
+    // re-transferring the whole image-heavy store and blowing origin bandwidth.
+    if (light) {
+      return NextResponse.json(
+        { orders: data?.orders ?? [], members: data?.members ?? [] },
+        { headers: { 'Cache-Control': 's-maxage=30, stale-while-revalidate=120' } },
+      )
+    }
     return NextResponse.json(data ?? {}, {
-      headers: { 'Cache-Control': 's-maxage=20, stale-while-revalidate=30' },
+      headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' },
     })
   } catch {
     return NextResponse.json({}, {
-      headers: { 'Cache-Control': 's-maxage=20, stale-while-revalidate=30' },
+      headers: { 'Cache-Control': 's-maxage=30, stale-while-revalidate=120' },
     })
   }
 }

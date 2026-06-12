@@ -221,9 +221,15 @@ type ServerPayload = {
   viewCounts?: Record<string, number>
 }
 
-async function fetchFromServer(): Promise<ServerPayload> {
+async function fetchFromServer(light = false): Promise<ServerPayload> {
   try {
-    const res = await fetch('/api/store', { cache: 'no-store' })
+    // Full store: let the CDN cache it (s-maxage) so the heavy image payload is
+    // fetched from origin ~once per cache window globally, not once per visitor.
+    // Light polls return only orders/members (tiny) so a direct hit is cheap.
+    const res = await fetch(
+      light ? '/api/store?light=1' : '/api/store',
+      light ? { cache: 'no-store' } : { cache: 'default' },
+    )
     if (!res.ok) return {}
     return await res.json()
   } catch {
@@ -330,27 +336,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }).catch(() => setIsLoaded(true))
   }, [])
 
-  // Poll server every 15s when admin is logged in so new customer orders appear live
+  // Poll (light) every 30s when admin is logged in so new customer orders appear live
   useEffect(() => {
     if (!isAdmin || !isLoaded) return
     const poll = async () => {
-      const sv = await fetchFromServer()
+      const sv = await fetchFromServer(true) // light: orders/members only
       if (sv.orders)  setOrders(sv.orders)
       if (sv.members) setMembers(sv.members)
     }
-    const timer = setInterval(poll, 15000)
+    const timer = setInterval(poll, 30000)
     return () => clearInterval(timer)
   }, [isAdmin, isLoaded])
 
-  // Poll every 60s for non-admin visitors to keep hero stats (orders/members) current
+  // Visitors don't need live stats — refresh light counts occasionally (5 min).
+  // Heavy product/image data is loaded once on mount, never re-polled.
   useEffect(() => {
     if (isAdmin || !isLoaded) return
     const poll = async () => {
-      const sv = await fetchFromServer()
+      const sv = await fetchFromServer(true) // light: orders/members only
       if (sv.orders)  setOrders(sv.orders)
       if (sv.members) setMembers(sv.members)
     }
-    const timer = setInterval(poll, 60000)
+    const timer = setInterval(poll, 300000)
     return () => clearInterval(timer)
   }, [isAdmin, isLoaded])
 
