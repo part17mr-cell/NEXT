@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Home, ShoppingBag, Headset, UserPlus, LogIn, User, LogOut, Settings, Zap, ShoppingCart } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 
 export function Navbar() {
   const pathname = usePathname()
@@ -193,6 +194,9 @@ export function Navbar() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-80 glass-strong border-border p-0">
+              <VisuallyHidden>
+                <SheetTitle>เมนูนำทาง</SheetTitle>
+              </VisuallyHidden>
               <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="p-6 border-b border-border/50">
