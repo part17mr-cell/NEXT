@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Headset, MessageSquare, Mail, ExternalLink, Phone, Clock, ShieldCheck } from 'lucide-react'
+import { Headset, MessageSquare, Mail, ExternalLink, Clock, ShieldCheck } from 'lucide-react'
 import { useStore } from '@/lib/store-context'
 
 const fadeUp = (delay = 0) => ({
@@ -14,7 +14,6 @@ const fadeUp = (delay = 0) => ({
 export default function ContactPage() {
   const { settings } = useStore()
   const { contact } = settings
-  const hasPhone = contact.phone && contact.phone !== '-'
 
   return (
     <section className="relative py-14 px-4 overflow-hidden">
@@ -35,9 +34,29 @@ export default function ContactPage() {
 
         {/* Contact channels */}
         <div className="grid sm:grid-cols-2 gap-4">
+          {/* Line OA */}
+          {contact.lineUrl && (
+            <motion.a
+              {...fadeUp(0.05)}
+              href={contact.lineUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 p-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/50 hover:-translate-y-0.5 transition-all group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                <MessageSquare className="w-6 h-6 text-emerald-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-bold text-emerald-300">Line OA</p>
+                <p className="text-sm text-muted-foreground truncate">{contact.lineId || 'ติดต่อทาง Line'}</p>
+              </div>
+              <ExternalLink className="w-4 h-4 text-emerald-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+            </motion.a>
+          )}
+
           {/* Discord */}
           <motion.a
-            {...fadeUp(0.05)}
+            {...fadeUp(0.1)}
             href="https://discord.gg/Bnp7sR3uf"
             target="_blank"
             rel="noopener noreferrer"
@@ -71,23 +90,6 @@ export default function ContactPage() {
             </motion.a>
           )}
 
-          {/* Phone */}
-          {hasPhone && (
-            <motion.a
-              {...fadeUp(0.15)}
-              href={`tel:${contact.phone}`}
-              className="flex items-center gap-4 p-5 rounded-2xl border border-violet-500/30 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/50 hover:-translate-y-0.5 transition-all"
-            >
-              <div className="w-12 h-12 rounded-xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center shrink-0">
-                <Phone className="w-6 h-6 text-violet-400" />
-              </div>
-              <div>
-                <p className="font-bold text-violet-300">โทรศัพท์</p>
-                <p className="text-sm text-muted-foreground">{contact.phone}</p>
-              </div>
-            </motion.a>
-          )}
-
           {/* Service hours */}
           <motion.div
             {...fadeUp(0.2)}
@@ -111,7 +113,7 @@ export default function ContactPage() {
           <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
           <p className="text-sm text-muted-foreground leading-relaxed">
             สั่งซื้อแล้วของยังไม่มา? ส่ง<strong className="text-foreground"> เลขออเดอร์ </strong>
-            และ<strong className="text-foreground"> สลิป </strong>มาทาง Discord ได้เลย แอดมินตรวจสอบและส่งของให้ทันที
+            และ<strong className="text-foreground"> สลิป </strong>มาทาง Line หรือ Discord ได้เลย แอดมินตรวจสอบและส่งของให้ทันที
           </p>
         </motion.div>
 
