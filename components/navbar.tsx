@@ -44,7 +44,7 @@ export function Navbar() {
       className="sticky top-4 z-50 mx-auto max-w-6xl px-4"
     >
       <div className={`
-        rounded-2xl border transition-all duration-500 ease-out
+        rounded-2xl border transition-[border-color,box-shadow,background-color,backdrop-filter] duration-300 ease-out
         ${scrolled
           ? 'border-border/80 glass-strong shadow-xl shadow-black/20'
           : 'border-border/50 glass'

@@ -203,7 +203,7 @@ function StoreContent() {
               </div>
 
               {/* Category Tab Pills */}
-              <div className="flex flex-wrap gap-2 border-t border-border/60 pt-3">
+              <div className="flex gap-2 scroll-x border-t border-border/60 pt-3 pb-0.5">
                 {(['all', ...categories] as string[]).map(cat => {
                   const cfg = catTabConfig[cat]
                   const isActive = category === cat
@@ -211,7 +211,7 @@ function StoreContent() {
                     <button
                       key={cat}
                       onClick={() => setCategory(cat)}
-                      className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
+                      className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
                         isActive
                           ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/30'
                           : 'bg-secondary/60 text-muted-foreground hover:text-foreground hover:bg-secondary'

@@ -45,7 +45,7 @@ function ProductCard({ product, index }: {
     >
       <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-primary/10 to-violet-900/10">
         {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+          <img src={product.image_url} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Package className="w-12 h-12 text-primary/20" />
@@ -137,7 +137,7 @@ export function HomeCategories() {
           </motion.div>
 
           {featured.length > 0 ? (
-            <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
+            <div className="flex gap-4 scroll-x pb-3 -mx-2 px-2">
               {featured.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
             </div>
           ) : (

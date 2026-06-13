@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, IBM_Plex_Sans_Thai, Space_Grotesk, JetBrains_Mono } from 'next/font/google'
+import { Inter, IBM_Plex_Sans_Thai, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import './globals.css'
@@ -14,13 +14,6 @@ const ibmPlex = IBM_Plex_Sans_Thai({
   subsets: ["thai", "latin"],
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-thai',
-  display: 'swap'
-})
-
-const spaceGrotesk = Space_Grotesk({ 
-  subsets: ["latin"],
-  weight: ['500', '600', '700'],
-  variable: '--font-display',
   display: 'swap'
 })
 
@@ -61,7 +54,7 @@ export default function RootLayout({
   return (
     <html
       lang="th"
-      className={`${inter.variable} ${ibmPlex.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${ibmPlex.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
       data-scroll-behavior="smooth"
     >

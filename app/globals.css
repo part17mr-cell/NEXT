@@ -104,6 +104,18 @@
   body {
     @apply text-foreground min-h-screen;
     background: transparent;
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+  }
+
+  /* Eliminate 300ms tap delay on all interactive elements */
+  a, button, [role="button"], input, select, textarea, label {
+    touch-action: manipulation;
+  }
+
+  /* Smooth tap highlight removal on iOS */
+  a, button {
+    -webkit-tap-highlight-color: transparent;
   }
   body::before {
     content: "";
@@ -256,11 +268,29 @@
     background: color-mix(in oklab, var(--card), transparent 22%);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    will-change: backdrop-filter;
   }
   .glass-strong {
     background: color-mix(in oklab, var(--card), transparent 8%);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+    will-change: backdrop-filter;
+  }
+
+  /* Smooth horizontal scroll containers (products carousel, category tabs) */
+  .scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .scroll-x::-webkit-scrollbar { display: none; }
+
+  /* GPU compositing layer for heavy animation containers */
+  .gpu-layer {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
   }
 
   .gpu-accelerate {

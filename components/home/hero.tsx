@@ -36,7 +36,7 @@ function MiniCard({
       {/* image */}
       <div className="relative w-full aspect-square bg-gradient-to-br from-primary/15 to-violet-900/20 overflow-hidden">
         {image_url ? (
-          <img src={image_url} alt={name} className="w-full h-full object-cover" />
+          <img src={image_url} alt={name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Package className="w-8 h-8 text-primary/20" />
@@ -72,7 +72,7 @@ function FeaturedCard({
     <motion.div
       animate={{ y: [0, -10, 0] }}
       transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-      className="relative w-72 rounded-3xl overflow-hidden border-2 border-primary/50 bg-card shadow-2xl shadow-primary/25 will-change-transform"
+      className="relative w-56 sm:w-64 lg:w-72 rounded-3xl overflow-hidden border-2 border-primary/50 bg-card shadow-2xl shadow-primary/25 will-change-transform"
       style={{ boxShadow: '0 0 40px oklch(0.55 0.27 292 / 0.2), 0 25px 50px rgb(0 0 0 / 0.5)' }}
     >
       {/* BEST SELLER badge */}
@@ -83,7 +83,7 @@ function FeaturedCard({
       {/* product image */}
       <div className="relative aspect-square bg-gradient-to-br from-primary/20 to-violet-950/30 overflow-hidden">
         {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+          <img src={product.image_url} alt={product.name} loading="eager" decoding="async" fetchPriority="high" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Package className="w-24 h-24 text-primary/15" />
@@ -262,7 +262,7 @@ export function HomeHero() {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex justify-center items-center min-h-[480px]"
+            className="relative flex justify-center items-center min-h-[420px] sm:min-h-[480px] overflow-hidden lg:overflow-visible"
           >
             {/* aurora + glow graphic */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -279,28 +279,28 @@ export function HomeHero() {
 
             {/* mini card — top left */}
             {minis[0] && (
-              <div className="absolute top-0 left-0 z-20">
+              <div className="absolute top-2 left-2 sm:top-0 sm:left-0 z-20 hidden xs:block sm:block">
                 <MiniCard {...minis[0]} rotate={-8} delay={0.3} formatMoney={formatMoney} />
               </div>
             )}
 
             {/* mini card — top right */}
             {minis[1] && (
-              <div className="absolute top-0 right-0 z-20">
+              <div className="absolute top-2 right-2 sm:top-0 sm:right-0 z-20 hidden xs:block sm:block">
                 <MiniCard {...minis[1]} rotate={8} delay={0.8} formatMoney={formatMoney} />
               </div>
             )}
 
             {/* mini card — bottom left */}
             {minis[2] && (
-              <div className="absolute bottom-0 left-0 z-20">
+              <div className="absolute bottom-2 left-2 sm:bottom-0 sm:left-0 z-20 hidden xs:block sm:block">
                 <MiniCard {...minis[2]} rotate={-5} delay={1.2} formatMoney={formatMoney} />
               </div>
             )}
 
             {/* mini card — bottom right */}
             {minis[3] && (
-              <div className="absolute bottom-0 right-0 z-20">
+              <div className="absolute bottom-2 right-2 sm:bottom-0 sm:right-0 z-20 hidden xs:block sm:block">
                 <MiniCard {...minis[3]} rotate={5} delay={0.6} formatMoney={formatMoney} />
               </div>
             )}
